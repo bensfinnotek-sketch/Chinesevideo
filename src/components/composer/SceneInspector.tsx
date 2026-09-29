@@ -1,5 +1,5 @@
 import React from 'react';
-import { Download, Edit3, Film, RefreshCw, Settings2, Volume2 } from 'lucide-react';
+import { Clock, Download, Edit3, Film, RefreshCw, Settings2, Sparkles, Volume2 } from 'lucide-react';
 import { LessonScene } from '../../types/lesson';
 import { VideoFormat, VideoComposerConfig, TransitionType } from '../../types/composer';
 import { AudioSegment, TTSSpeedMode } from '../../services/audioEngine/types';
@@ -72,7 +72,7 @@ export const SceneInspector: React.FC<SceneInspectorProps> = ({
   handleStartExport,
   drawCurrentCanvasFrame,
 }) => (
-        <div className="lg:col-span-5 bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-5">
+        <div className="lg:col-span-5 bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-5 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
           
           {/* Header of Inspector */}
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -271,6 +271,62 @@ export const SceneInspector: React.FC<SceneInspectorProps> = ({
                     <div className="mt-0.5 truncate text-[11px] font-medium text-slate-700">{value}</div>
                   </div>
                 ))}
+              </div>
+              <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-700 uppercase tracking-wide">
+                    <Clock className="w-3.5 h-3.5 text-rose-500" />
+                    Layer timing
+                  </div>
+                  <span className="text-[10px] font-mono text-slate-400">
+                    {currentScene?.duration || 0}s
+                  </span>
+                </div>
+                {(() => {
+                  const audio = audioEngine.getAudioForScene(currentScene?.sceneId);
+                  const segments = audio?.segments || [];
+                  const total = Math.max(audio?.duration || currentScene?.duration || 1, 1);
+                  const visibleSegments = segments.filter(segment => segment.type !== 'pause');
+                  return (
+                    <div className="space-y-2">
+                      <div className="relative h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                        {visibleSegments.length > 0 ? visibleSegments.map((segment, index) => {
+                          const left = Math.max(0, Math.min(100, (segment.start / total) * 100));
+                          const width = Math.max(1, Math.min(100 - left, ((segment.end - segment.start) / total) * 100));
+                          const active = previewCurrentTime >= segment.start && previewCurrentTime <= segment.end;
+                          return (
+                            <div
+                              key={index}
+                              className={`absolute top-0 h-full rounded-full transition-opacity ${active ? 'bg-rose-500' : 'bg-slate-300'}`}
+                              style={{ left: `${left}%`, width: `${width}%` }}
+                              title={`${segment.text} · ${segment.start.toFixed(1)}–${segment.end.toFixed(1)}s`}
+                            />
+                          );
+                        }) : (
+                          <div className="h-full w-full bg-slate-200" />
+                        )}
+                      </div>
+                      {visibleSegments.length > 0 ? (
+                        <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1">
+                          {visibleSegments.map((segment, index) => {
+                            const active = previewCurrentTime >= segment.start && previewCurrentTime <= segment.end;
+                            return (
+                              <div key={index} className={`grid grid-cols-[52px_1fr] gap-2 rounded-lg px-2 py-1.5 text-[10px] ${active ? 'bg-rose-50 border border-rose-100' : 'bg-slate-50'}`}>
+                                <span className="font-mono text-slate-400">{segment.start.toFixed(1)}–{segment.end.toFixed(1)}</span>
+                                <div className="min-w-0">
+                                  <div className="truncate font-semibold text-slate-700">{segment.text}</div>
+                                  <div className="text-slate-400">{segment.type === 'chinese_dialogue' ? 'Chinese / Karaoke' : 'Teacher explanation'}</div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="text-[10px] text-slate-400">Chưa có segment timing. Hãy tạo Audio cho Scene để đồng bộ Karaoke.</div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           )}
