@@ -164,7 +164,7 @@ export function lessonSceneToLessonJson(
     vietnamese: scene.vietnamese,
     teacherExplanation: scene.teacherExplanation,
     highlightWords: scene.highlightWords || [],
-    karaokeTiming: scene.karaokeTiming?.map(({ text, start, end }) => ({ text, start, end })),
+    karaokeTiming: scene.karaokeTiming?.map(({ text, pinyin, start, end }) => ({ text, pinyin, start, end })),
     visualPrompt: scene.visualPrompt,
     audio: {
       language: 'zh-CN',
