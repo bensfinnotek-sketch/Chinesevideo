@@ -64,10 +64,24 @@ export const KaraokeTimingEditor: React.FC<KaraokeTimingEditorProps> = ({
     if (text.length < 2 || selected.end - selected.start < 0.1) return;
     const midpoint = selected.start + (selected.end - selected.start) / 2;
     const splitAt = Math.max(1, Math.floor(text.length / 2));
+    const pinyinSyllables = (selected.pinyin || '').trim().split(/\s+/).filter(Boolean);
+    const firstPinyinCount = pinyinSyllables.length
+      ? Math.max(1, Math.min(pinyinSyllables.length - 1, Math.round(pinyinSyllables.length * (splitAt / text.length))))
+      : 0;
     emit([
       ...safeTokens.filter(token => token.index !== selected.index),
-      { ...selected, text: text.slice(0, splitAt), end: midpoint },
-      { ...selected, text: text.slice(splitAt), start: midpoint },
+      {
+        ...selected,
+        text: text.slice(0, splitAt),
+        pinyin: pinyinSyllables.slice(0, firstPinyinCount).join(' '),
+        end: midpoint
+      },
+      {
+        ...selected,
+        text: text.slice(splitAt),
+        pinyin: pinyinSyllables.slice(firstPinyinCount).join(' '),
+        start: midpoint
+      },
     ]);
     setSelectedIndex(Math.min(selectedIndex + 1, safeTokens.length - 1));
   };
@@ -77,7 +91,12 @@ export const KaraokeTimingEditor: React.FC<KaraokeTimingEditorProps> = ({
     const next = safeTokens[selectedIndex + 1];
     emit([
       ...safeTokens.slice(0, selectedIndex),
-      { ...selected, text: selected.text + next.text, end: Math.max(selected.end, next.end) },
+      {
+        ...selected,
+        text: selected.text + next.text,
+        pinyin: [selected.pinyin, next.pinyin].filter(Boolean).join(' '),
+        end: Math.max(selected.end, next.end)
+      },
       ...safeTokens.slice(selectedIndex + 2),
     ]);
   };
