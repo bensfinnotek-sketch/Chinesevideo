@@ -184,6 +184,8 @@ export interface LessonScene {
   teacherExplanation: string; // Lời giảng của giáo viên bằng tiếng Việt
   pedagogicalDetails?: PedagogicalExplanation; // 5 thành phần sư phạm chi tiết
   highlightWords: string[];
+  /** Manual phrase-level karaoke timing saved with the scene. */
+  karaokeTiming?: Array<{ text: string; start: number; end: number }>;
   voice: string; // ví dụ: "female_teacher_vi", "char_a_beijing_female", "char_b_beijing_male"
   visualPrompt: string; // Mô tả khung hình cho Visual Generator
   practiceQuestion?: { // Thử thách nhỏ cho mini practice
