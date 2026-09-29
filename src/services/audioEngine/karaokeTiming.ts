@@ -8,7 +8,7 @@ function normalize(value: string): string {
 }
 
 function splitPinyinSyllables(pinyin: string): string[] {
-  return pinyin.trim().split(/\\s+/).filter(Boolean);
+  return pinyin.trim().split(/\s+/).filter(Boolean);
 }
 
 function attachPinyinToUnits(units: string[], pinyin: string): string[] {
