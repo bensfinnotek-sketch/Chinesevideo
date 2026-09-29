@@ -94,6 +94,7 @@ export const VideoComposerStudio: React.FC<VideoComposerStudioProps> = ({
   // Preview playback state
   const [isPlayingPreview, setIsPlayingPreview] = useState(false);
   const [previewCurrentTime, setPreviewCurrentTime] = useState(0);
+  const [previewStartTime, setPreviewStartTime] = useState(0);
   const [activeAudioSegment, setActiveAudioSegment] = useState<AudioSegment | null>(null);
 
   // Export pipeline modal & progress
@@ -177,7 +178,7 @@ export const VideoComposerStudio: React.FC<VideoComposerStudioProps> = ({
           setActiveAudioSegment(null);
           drawCurrentCanvasFrame(0);
         }
-      );
+      , previewStartTime);
     } else {
       if (audioControllerRef.current) {
         audioControllerRef.current.stop();
@@ -189,7 +190,7 @@ export const VideoComposerStudio: React.FC<VideoComposerStudioProps> = ({
         audioControllerRef.current.stop();
       }
     };
-  }, [isPlayingPreview, activeSceneIndex]);
+  }, [isPlayingPreview, activeSceneIndex, previewStartTime]);
 
   // Lưu chỉnh sửa Scene
   const handleSaveSceneEdits = () => {
@@ -206,6 +207,13 @@ export const VideoComposerStudio: React.FC<VideoComposerStudioProps> = ({
     onUpdateScenes(updated);
     setIsEditingScene(false);
     drawCurrentCanvasFrame(previewCurrentTime);
+  };
+
+  const handlePlayKaraokePhrase = (startTime: number) => {
+    setPreviewStartTime(Math.max(0, startTime));
+    setPreviewCurrentTime(Math.max(0, startTime));
+    setIsPlayingPreview(false);
+    window.setTimeout(() => setIsPlayingPreview(true), 0);
   };
 
   const handleKaraokeTimingChange = (tokens: import('../../services/audioEngine/types').KaraokeToken[]) => {
@@ -478,6 +486,7 @@ export const VideoComposerStudio: React.FC<VideoComposerStudioProps> = ({
           handleStartExport={handleStartExport}
           drawCurrentCanvasFrame={drawCurrentCanvasFrame}
           onKaraokeTimingChange={handleKaraokeTimingChange}
+          onPlayKaraokePhrase={handlePlayKaraokePhrase}
         />
       </div>
 
