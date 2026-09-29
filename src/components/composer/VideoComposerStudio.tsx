@@ -472,7 +472,7 @@ export const VideoComposerStudio: React.FC<VideoComposerStudioProps> = ({
           </div>
 
           {inspectorTab === 'content' && (
-          {/* Quick Regenerate Actions (Theo đúng yêu cầu) */}
+          <>
           <div className="grid grid-cols-3 gap-2 text-xs">
             <button
               onClick={handleRegenerateScene}
@@ -638,7 +638,8 @@ export const VideoComposerStudio: React.FC<VideoComposerStudioProps> = ({
             </div>
           )}
 
-          )}
+          )}          </>
+
 
           {inspectorTab === 'audio' && (
             <div className="space-y-3">
