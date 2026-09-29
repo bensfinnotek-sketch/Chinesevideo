@@ -288,7 +288,9 @@ export const VideoComposerStudio: React.FC<VideoComposerStudioProps> = ({
     if (!exportResult) return;
     const a = document.createElement('a');
     a.href = exportResult.videoUrl;
-    a.download = `${lesson.title.replace(/\s+/g, '_')}_1080p_24fps.mp4`;
+    const safeTitle = lesson.title.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const extension = exportResult.fileExtension;
+    a.download = `${safeTitle}_${composerConfig.format.replace(':', 'x')}_${composerConfig.fps}fps.${extension}`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -794,7 +796,7 @@ export const VideoComposerStudio: React.FC<VideoComposerStudioProps> = ({
                 <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex items-center gap-2 text-xs text-emerald-900 font-medium">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                   <span>
-                    Toàn bộ {scenes.length} Scenes đã được đóng gói thành file video Full HD 1080p ({exportResult?.durationSeconds}s, {exportResult?.fileSizeMb} MB)!
+                    Toàn bộ {scenes.length} Scenes đã được đóng gói ({exportResult?.mimeType}, {exportResult?.durationSeconds}s, {exportResult?.fileSizeMb} MB).
                   </span>
                 </div>
 
@@ -817,7 +819,7 @@ export const VideoComposerStudio: React.FC<VideoComposerStudioProps> = ({
                     className="w-full sm:flex-1 py-2.5 px-4 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-2 shadow-2xs"
                   >
                     <Download className="w-4 h-4" />
-                    <span>Download MP4</span>
+                    <span>Download {exportResult?.fileExtension === 'mp4' ? 'MP4' : 'WebM'}</span>
                   </button>
 
                   <button
