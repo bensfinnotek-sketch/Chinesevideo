@@ -147,6 +147,10 @@ export function renderSceneCanvasFrame({
     s => currentTimeInScene >= s.start && currentTimeInScene <= s.end
   ) || null;
 
+  const activeKaraokeToken = audioMeta?.karaokeTokens?.find(
+    token => currentTimeInScene >= token.start && currentTimeInScene <= token.end
+  ) || null;
+
   // Tính toán vùng trung tâm hiển thị
   const contentYStart = headerY + height * 0.08;
   const contentHeight = safeH * 0.65;
@@ -181,7 +185,9 @@ export function renderSceneCanvasFrame({
         const isHighlight = tok.isHighlight;
         const normalizedSegment = activeSegment?.text?.replace(/[，。！？、；：,.!?;:\s]/g, '') || '';
         const normalizedToken = tok.text.replace(/[，。！？、；：,.!?;:\s]/g, '');
-        const isSpokenNow = activeSegment?.type === 'chinese_dialogue' && Boolean(normalizedToken) && (normalizedSegment === normalizedToken || normalizedSegment.includes(normalizedToken) || normalizedToken.includes(normalizedSegment));
+        const karaokeText = activeKaraokeToken?.text?.replace(/[，。！？、；：,.!?;:\s]/g, '') || '';
+        const isPhraseSpokenNow = activeSegment?.type === 'chinese_dialogue' && Boolean(karaokeText) && Boolean(normalizedToken) && (normalizedToken.includes(karaokeText) || karaokeText.includes(normalizedToken));
+        const isSpokenNow = isPhraseSpokenNow || (activeSegment?.type === 'chinese_dialogue' && Boolean(normalizedToken) && (normalizedSegment === normalizedToken || normalizedSegment.includes(normalizedToken) || normalizedToken.includes(normalizedSegment)));
 
         const tokenW = ctx.measureText(tok.text).width;
 
