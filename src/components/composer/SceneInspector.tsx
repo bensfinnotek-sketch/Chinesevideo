@@ -42,7 +42,7 @@ interface SceneInspectorProps {
   handleStartExport: () => Promise<void>;
   drawCurrentCanvasFrame: (timeInSec: number) => void;
   onKaraokeTimingChange: (tokens: KaraokeToken[]) => void;
-  onPlayKaraokePhrase: (startTime: number) => void;
+  onPlayKaraokePhrase: (startTime: number, endTime: number) => void;
 }
 
 export const SceneInspector: React.FC<SceneInspectorProps> = ({
