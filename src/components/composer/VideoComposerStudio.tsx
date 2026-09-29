@@ -232,7 +232,7 @@ export const VideoComposerStudio: React.FC<VideoComposerStudioProps> = ({
     const updated = [...scenes];
     updated[activeSceneIndex] = {
       ...currentScene,
-      karaokeTiming: tokens.map(({ text, start, end }) => ({ text, start, end })),
+      karaokeTiming: tokens.map(({ text, pinyin, start, end }) => ({ text, pinyin, start, end })),
     };
     onUpdateScenes(updated);
     drawCurrentCanvasFrame(previewCurrentTime);
