@@ -217,14 +217,44 @@ export function renderSceneCanvasFrame({
       });
       ctx.restore();
 
-      // 3. Dòng 2: Pinyin Layer (Có dấu thanh điệu chuẩn)
+      // 3. Dòng 2: Pinyin Layer — highlight đúng phrase đang phát.
       if (turn.pinyin) {
         ctx.save();
         const pinyinFontSize = Math.max(16, Math.floor(height * 0.028));
         ctx.font = `500 ${pinyinFontSize}px monospace, sans-serif`;
-        const visiblePinyin = activeKaraokeToken?.pinyin || turn.pinyin;
-        ctx.fillStyle = isDark ? '#FB7185' : '#E11D48';
-        ctx.fillText(visiblePinyin, textOffsetX, turnY + chineseFontSize * 0.65);
+        const pinyinY = turnY + chineseFontSize * 0.65;
+        const basePinyinColor = isDark ? '#CBD5E1' : '#64748B';
+        const activePinyinColor = isDark ? '#FDA4AF' : '#E11D48';
+
+        ctx.fillStyle = basePinyinColor;
+        ctx.fillText(turn.pinyin, textOffsetX, pinyinY);
+
+        if (activeKaraokeToken?.pinyin && activeSegment?.type === 'chinese_dialogue') {
+          const phrase = normalizeKaraokeText(activeKaraokeToken.text);
+          const fullText = normalizeKaraokeText(turn.chinese);
+          const phraseIndex = phrase ? fullText.indexOf(phrase) : -1;
+
+          if (phraseIndex >= 0 && fullText.length > 0) {
+            const prefixRatio = phraseIndex / fullText.length;
+            const phraseRatio = Math.max(phrase.length, 1) / fullText.length;
+            const pinyinWidth = ctx.measureText(turn.pinyin).width;
+            const activeWidth = Math.max(8, pinyinWidth * phraseRatio);
+            const activeX = textOffsetX + pinyinWidth * prefixRatio;
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(activeX - 2, pinyinY - pinyinFontSize, activeWidth + 4, pinyinFontSize * 1.25);
+            ctx.clip();
+            ctx.fillStyle = activePinyinColor;
+            ctx.fillText(turn.pinyin, textOffsetX, pinyinY);
+            ctx.restore();
+          } else {
+            // Nếu phrase không khớp tuyệt đối với dòng hiện tại, vẫn giữ Pinyin
+            // của phrase để tránh mất liên kết chữ Hán ↔ Pinyin.
+            ctx.fillStyle = activePinyinColor;
+            ctx.fillText(activeKaraokeToken.pinyin, textOffsetX, pinyinY);
+          }
+        }
         ctx.restore();
       }
 
@@ -333,6 +363,10 @@ export function renderSceneCanvasFrame({
     }
     ctx.restore();
   }
+}
+
+function normalizeKaraokeText(value: string): string {
+  return value.replace(/[，。！？、；：,.!?;:\s]/g, '');
 }
 
 function drawCoverImage(ctx: CanvasRenderingContext2D, img: HTMLImageElement, targetW: number, targetH: number) {
