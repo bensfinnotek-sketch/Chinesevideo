@@ -1,0 +1,6 @@
+{
+  "name": "Chinese Video Lesson Maker",
+  "description": "Ứng dụng AI tạo bài giảng video tiếng Trung tự động cho người Việt",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
