@@ -218,6 +218,11 @@ export const KaraokeTimingEditor: React.FC<KaraokeTimingEditorProps> = ({
             </label>
           </div>
 
+          <div className="rounded-lg border border-rose-100 bg-white px-2 py-1.5">
+            <div className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Pinyin</div>
+            <div className="mt-0.5 text-[11px] font-semibold text-rose-700">{selected.pinyin || '—'}</div>
+          </div>
+
           <label className="text-[10px] font-semibold text-slate-600 block">
             Phrase
             <input value={draftText} onChange={e => setDraftText(e.target.value)} onBlur={() => updateSelected({ text: draftText })} onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); }} className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold text-slate-800" />
