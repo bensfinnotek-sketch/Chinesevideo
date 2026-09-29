@@ -92,7 +92,9 @@ export function buildKaraokeTokens(
   segments.forEach((segment, segmentIndex) => {
     if (segment.type !== 'chinese_dialogue' || segment.end <= segment.start) return;
 
-    const clauses = splitSmartClauses(segment.text);\n    const units = clauses.flatMap(clause => buildPhraseUnits(clause, preferredPhrases));\n    const pinyinUnits = attachPinyinToUnits(units, segment.pinyin || '');
+    const clauses = splitSmartClauses(segment.text);
+    const units = clauses.flatMap(clause => buildPhraseUnits(clause, preferredPhrases));
+    const pinyinUnits = attachPinyinToUnits(units, segment.pinyin || '');
     if (!units.length) return;
 
     const weights = units.map(unit => Math.max(1, normalize(unit).length));
@@ -106,6 +108,7 @@ export function buildKaraokeTokens(
       tokens.push({
         text: unit,
         pinyin: pinyinUnits[index] || '',
+        pinyinSyllables: splitPinyinSyllables(pinyinUnits[index] || ''),
         start: cursor,
         end,
         index: globalIndex++,
@@ -154,6 +157,7 @@ export function sceneKaraokeTimingToTokens(
       return {
         text,
         pinyin: matched?.pinyin || '',
+        pinyinSyllables: matched?.pinyinSyllables || splitPinyinSyllables(matched?.pinyin || ''),
         start,
         end,
         index,
@@ -164,4 +168,4 @@ export function sceneKaraokeTimingToTokens(
     .sort((a, b) => a.start - b.start)
     .map((token, index) => ({ ...token, index }));
 }
-\n
+
