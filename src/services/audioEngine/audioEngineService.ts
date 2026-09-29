@@ -4,7 +4,8 @@ import {
   AudioEngineSettings, 
   AudioMetadata, 
   AudioSegment, 
-  TTSSpeedMode 
+  TTSSpeedMode,
+  KaraokeToken 
 } from './types';
 import { LessonScene } from '../../types/lesson';
 import { GeminiTTSProvider } from './providers/geminiTTSProvider';
@@ -71,6 +72,30 @@ export class AudioEngineService {
 
   public setAudioForScene(metadata: AudioMetadata) {
     this.sceneAudios.set(String(metadata.sceneId), metadata);
+  }
+
+  /**
+   * Update manual karaoke phrase timing without regenerating TTS audio.
+   * Tokens are sorted, clamped to the scene duration and re-indexed.
+   */
+  public updateKaraokeTokens(sceneId: string | number, tokens: KaraokeToken[]) {
+    const metadata = this.sceneAudios.get(String(sceneId));
+    if (!metadata) return;
+
+    const duration = Math.max(0.05, metadata.duration || 0.05);
+    const normalized = tokens
+      .map(token => ({
+        ...token,
+        text: token.text.trim(),
+        start: Math.max(0, Math.min(duration, Number(token.start) || 0)),
+        end: Math.max(0, Math.min(duration, Number(token.end) || 0)),
+      }))
+      .filter(token => token.text && token.end > token.start)
+      .sort((a, b) => a.start - b.start)
+      .map((token, index) => ({ ...token, index }));
+
+    metadata.karaokeTokens = normalized;
+    this.sceneAudios.set(String(sceneId), metadata);
   }
 
   /**
