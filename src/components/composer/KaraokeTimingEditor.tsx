@@ -7,6 +7,7 @@ interface KaraokeTimingEditorProps {
   duration: number;
   currentTime: number;
   onChange: (tokens: KaraokeToken[]) => void;
+  onPlayPhrase: (startTime: number) => void;
 }
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
@@ -16,6 +17,7 @@ export const KaraokeTimingEditor: React.FC<KaraokeTimingEditorProps> = ({
   duration,
   currentTime,
   onChange,
+  onPlayPhrase,
 }) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [draftText, setDraftText] = useState('');
@@ -83,6 +85,43 @@ export const KaraokeTimingEditor: React.FC<KaraokeTimingEditorProps> = ({
     setSelectedIndex(Math.max(0, selectedIndex - 1));
   };
 
+  const beginDrag = (tokenIndex: number, kind: 'start' | 'end') => (event: React.PointerEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const track = event.currentTarget.parentElement?.parentElement;
+    if (!track) return;
+
+    const rect = track.getBoundingClientRect();
+    const token = safeTokens[tokenIndex];
+    if (!token) return;
+    setSelectedIndex(tokenIndex);
+
+    const handleMove = (moveEvent: PointerEvent) => {
+      const ratio = clamp((moveEvent.clientX - rect.left) / rect.width, 0, 1);
+      const value = ratio * duration;
+      const previous = safeTokens[tokenIndex - 1];
+      const nextToken = safeTokens[tokenIndex + 1];
+
+      if (kind === 'start') {
+        const min = previous ? previous.end + 0.01 : 0;
+        const max = token.end - 0.01;
+        updateSelected({ start: clamp(value, min, max) });
+      } else {
+        const min = token.start + 0.01;
+        const max = nextToken ? nextToken.start - 0.01 : duration;
+        updateSelected({ end: clamp(value, min, max) });
+      }
+    };
+
+    const handleUp = () => {
+      window.removeEventListener('pointermove', handleMove);
+      window.removeEventListener('pointerup', handleUp);
+    };
+
+    window.addEventListener('pointermove', handleMove);
+    window.addEventListener('pointerup', handleUp);
+  };
+
   if (!safeTokens.length) {
     return <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-[10px] text-slate-500">Chưa có phrase timing. Hãy tạo Audio cho Scene trước.</div>;
   }
@@ -97,24 +136,38 @@ export const KaraokeTimingEditor: React.FC<KaraokeTimingEditorProps> = ({
         <span className="text-[10px] font-mono text-slate-500">{currentTime.toFixed(2)}s</span>
       </div>
 
-      <div className="relative h-9 rounded-lg bg-white border border-rose-100 overflow-hidden">
+      <div className="relative h-10 rounded-lg bg-white border border-rose-100 overflow-hidden select-none touch-none">
         {safeTokens.map((token, index) => {
           const left = (token.start / duration) * 100;
           const width = Math.max(1, ((token.end - token.start) / duration) * 100);
           const active = currentTime >= token.start && currentTime <= token.end;
           const selectedNow = selected?.index === token.index;
           return (
-            <button
+            <div
               key={token.index}
-              onClick={() => { setSelectedIndex(index); setDraftText(token.text); }}
-              className={"absolute top-0 h-full border-r border-white/70 px-1 text-[9px] font-semibold truncate transition-colors " + (active ? 'bg-rose-500 text-white' : selectedNow ? 'bg-rose-200 text-rose-900' : 'bg-slate-200 text-slate-700')}
+              onClick={() => { setSelectedIndex(index); setDraftText(token.text); onPlayPhrase(token.start); }}
+              className={"absolute top-0 h-full border-r border-white/70 px-1 text-[9px] font-semibold truncate cursor-pointer transition-colors " + (active ? 'bg-rose-500 text-white' : selectedNow ? 'bg-rose-200 text-rose-900' : 'bg-slate-200 text-slate-700')}
               style={{ left: left + '%', width: width + '%' }}
-              title={token.text + ' · ' + token.start.toFixed(2) + '–' + token.end.toFixed(2) + 's'}
+              title={token.text + ' · ' + token.start.toFixed(2) + '–' + token.end.toFixed(2) + 's · click để phát'}
             >
               {token.text}
-            </button>
+              <span
+                onPointerDown={beginDrag(index, 'start')}
+                className="absolute left-0 top-0 z-10 h-full w-2 cursor-ew-resize bg-transparent hover:bg-rose-700/30"
+                aria-label={"Kéo điểm bắt đầu " + token.text}
+              />
+              <span
+                onPointerDown={beginDrag(index, 'end')}
+                className="absolute right-0 top-0 z-10 h-full w-2 cursor-ew-resize bg-transparent hover:bg-rose-700/30"
+                aria-label={"Kéo điểm kết thúc " + token.text}
+              />
+            </div>
           );
         })}
+        <div
+          className="pointer-events-none absolute top-0 h-full w-px bg-black/70 z-20"
+          style={{ left: clamp((currentTime / duration) * 100, 0, 100) + '%' }}
+        />
       </div>
 
       {selected && (
@@ -134,6 +187,10 @@ export const KaraokeTimingEditor: React.FC<KaraokeTimingEditorProps> = ({
             Phrase
             <input value={draftText} onChange={e => setDraftText(e.target.value)} onBlur={() => updateSelected({ text: draftText })} onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); }} className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold text-slate-800" />
           </label>
+
+          <button onClick={() => onPlayPhrase(selected.start)} className="w-full rounded-lg bg-rose-600 text-white px-2 py-1.5 text-[10px] font-bold hover:bg-rose-700 flex items-center justify-center gap-1">
+            ▶ Phát từ phrase này
+          </button>
 
           <div className="grid grid-cols-3 gap-1.5">
             <button onClick={splitSelected} className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[10px] font-semibold text-slate-600 hover:bg-slate-50 flex items-center justify-center gap-1"><Scissors className="w-3 h-3" /> Split</button>
