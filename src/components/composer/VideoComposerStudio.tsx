@@ -70,6 +70,7 @@ export const VideoComposerStudio: React.FC<VideoComposerStudioProps> = ({
   });
 
   const [activeSceneIndex, setActiveSceneIndex] = useState(0);
+  const [inspectorTab, setInspectorTab] = useState<'content' | 'audio' | 'visual' | 'export'>('content');
   const currentScene = scenes[activeSceneIndex] || scenes[0];
 
   // Inline scene editing state
@@ -331,82 +332,11 @@ export const VideoComposerStudio: React.FC<VideoComposerStudioProps> = ({
           </p>
         </div>
 
-        {/* Global Controls & Export Trigger */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Format Selector: 16:9 / 9:16 / 1:1 */}
-          <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-xl text-xs">
-            <button
-              onClick={() => {
-                setComposerConfig({ ...composerConfig, format: '16:9' });
-                setTimeout(() => drawCurrentCanvasFrame(previewCurrentTime), 50);
-              }}
-              className={`px-3 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1.5 ${
-                composerConfig.format === '16:9'
-                  ? 'bg-white text-slate-900 shadow-2xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <Monitor className="w-3.5 h-3.5" />
-              <span>16:9 YouTube</span>
-            </button>
-
-            <button
-              onClick={() => {
-                setComposerConfig({ ...composerConfig, format: '9:16' });
-                setTimeout(() => drawCurrentCanvasFrame(previewCurrentTime), 50);
-              }}
-              className={`px-3 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1.5 ${
-                composerConfig.format === '9:16'
-                  ? 'bg-white text-rose-700 shadow-2xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <Smartphone className="w-3.5 h-3.5" />
-              <span>9:16 Shorts</span>
-            </button>
-
-            <button
-              onClick={() => {
-                setComposerConfig({ ...composerConfig, format: '1:1' });
-                setTimeout(() => drawCurrentCanvasFrame(previewCurrentTime), 50);
-              }}
-              className={`px-3 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1.5 ${
-                composerConfig.format === '1:1'
-                  ? 'bg-white text-slate-900 shadow-2xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <Square className="w-3.5 h-3.5" />
-              <span>1:1</span>
-            </button>
-          </div>
-
-          {/* Safe Area Guide Toggle */}
-          <button
-            onClick={() => {
-              setComposerConfig({ ...composerConfig, showSafeAreaGuide: !composerConfig.showSafeAreaGuide });
-              setTimeout(() => drawCurrentCanvasFrame(previewCurrentTime), 50);
-            }}
-            className={`p-2 rounded-xl border text-xs font-medium transition-all flex items-center gap-1 ${
-              composerConfig.showSafeAreaGuide
-                ? 'bg-rose-50 text-rose-700 border-rose-300 font-bold'
-                : 'bg-white text-slate-600 border-slate-200'
-            }`}
-            title="Bật/tắt lưới Safe Area 10% (tránh bị cắt chữ)"
-          >
-            {composerConfig.showSafeAreaGuide ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-            <span className="hidden sm:inline">Safe Area</span>
-          </button>
-
-          {/* Primary Export Button */}
-          <button
-            onClick={handleStartExport}
-            className="px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-2xs transition-all flex items-center gap-2"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>Xuất video</span>
-          </button>
-        </div>
+        <div className="flex items-center gap-2">
+          <span className="px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 text-[11px] font-semibold">{composerConfig.format} · {composerConfig.fps}fps</span>
+          <button onClick={() => setInspectorTab('export')} className="px-3 py-2 rounded-xl text-xs font-semibold border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 flex items-center gap-1.5"><Settings2 className="w-3.5 h-3.5" /> Cài đặt</button>
+          <button onClick={handleStartExport} className="px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white flex items-center gap-2"><Download className="w-3.5 h-3.5" /> Xuất video</button>
+        </div></div>
       </div>
 
       {/* 2. Timeline Navigation of 8 Scenes */}
@@ -531,6 +461,17 @@ export const VideoComposerStudio: React.FC<VideoComposerStudioProps> = ({
             </button>
           </div>
 
+          <div className="grid grid-cols-4 gap-1 p-1 bg-slate-100 rounded-xl">
+            {[
+              ['content', 'Nội dung', Edit3], ['audio', 'Audio', Volume2], ['visual', 'Visual', Film], ['export', 'Export', Settings2],
+            ].map(([key, label, Icon]: any) => (
+              <button key={key} onClick={() => setInspectorTab(key)} className={`px-2 py-2 rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1 ${inspectorTab === key ? 'bg-white text-rose-700 shadow-2xs' : 'text-slate-500'}`}>
+                <Icon className="w-3.5 h-3.5" /><span>{label}</span>
+              </button>
+            ))}
+          </div>
+
+          {inspectorTab === 'content' && (
           {/* Quick Regenerate Actions (Theo đúng yêu cầu) */}
           <div className="grid grid-cols-3 gap-2 text-xs">
             <button
@@ -694,6 +635,71 @@ export const VideoComposerStudio: React.FC<VideoComposerStudioProps> = ({
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          )}
+
+          {inspectorTab === 'audio' && (
+            <div className="space-y-3">
+              <div className="rounded-xl border border-slate-200 p-3 space-y-3">
+                <div className="flex items-center justify-between"><span className="text-xs font-bold text-slate-800">TTS & Karaoke</span><span className="text-[10px] font-mono text-emerald-600">{audioEngine.getAudioForScene(currentScene?.sceneId)?.duration || currentScene?.duration || 0}s</span></div>
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="text-[11px] font-medium text-slate-600">Voice
+                    <select value={editedVoice} onChange={e => { setEditedVoice(e.target.value); audioEngine.updateSettings({ chineseTeacherVoice: e.target.value }); }} className="mt-1 w-full p-2 rounded-lg border border-slate-200 bg-white text-xs">
+                      {AVAILABLE_VOICES.filter(v => v.language === 'zh-CN').map(v => <option key={v.id} value={v.geminiVoiceName || v.name.split(' ')[0]}>{v.name}</option>)}
+                    </select>
+                  </label>
+                  <label className="text-[11px] font-medium text-slate-600">Speed
+                    <select value={editedSpeed} onChange={e => { const value=e.target.value as TTSSpeedMode; setEditedSpeed(value); audioEngine.updateSettings({ speedMode:value }); }} className="mt-1 w-full p-2 rounded-lg border border-slate-200 bg-white text-xs">
+                      <option value="normal">1.0x · Normal</option><option value="slow">0.8x · Slow</option><option value="very_slow">0.65x · Very slow</option>
+                    </select>
+                  </label>
+                </div>
+                <label className="flex items-center justify-between rounded-lg bg-slate-50 p-2 text-[11px] text-slate-600"><span>Đọc Pinyin</span><input type="checkbox" checked={audioEngine.getSettings().includePinyinAudio} onChange={e => audioEngine.updateSettings({ includePinyinAudio:e.target.checked })} /></label>
+              </div>
+              <button onClick={handleRegenerateAudio} className="w-full py-2.5 rounded-xl bg-rose-600 text-white text-xs font-bold flex items-center justify-center gap-2"><RefreshCw className="w-3.5 h-3.5" /> Tạo lại Audio Scene</button>
+            </div>
+          )}
+
+          {inspectorTab === 'visual' && (
+            <div className="space-y-3">
+              <div className="rounded-xl border border-slate-200 p-3 space-y-3">
+                <div className="text-xs font-bold text-slate-800">Visual Scene</div>
+                <label className="text-[11px] font-medium text-slate-600 block">Theme
+                  <select value={composerConfig.themeStyle} onChange={e => { const value=e.target.value as VideoComposerConfig['themeStyle']; setComposerConfig({...composerConfig, themeStyle:value}); setTimeout(() => drawCurrentCanvasFrame(previewCurrentTime),50); }} className="mt-1 w-full p-2 rounded-lg border border-slate-200 bg-white text-xs">
+                    <option value="warm_paper">Warm paper</option><option value="studio_dark">Studio dark</option><option value="clean_white">Clean white</option>
+                  </select>
+                </label>
+                <div className="rounded-lg bg-slate-50 p-2 text-[11px] text-slate-500 truncate">Prompt: {currentScene?.visualPrompt || 'Chưa có visual prompt'}</div>
+              </div>
+              <button onClick={handleRegenerateVisual} className="w-full py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold flex items-center justify-center gap-2"><RefreshCw className="w-3.5 h-3.5" /> Tạo lại Visual Scene</button>
+            </div>
+          )}
+
+          {inspectorTab === 'export' && (
+            <div className="space-y-3">
+              <div className="rounded-xl border border-slate-200 p-3 space-y-3">
+                <div className="text-xs font-bold text-slate-800">Video Output</div>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {(['16:9','9:16','1:1'] as VideoFormat[]).map(format => (
+                    <button key={format} onClick={() => { setComposerConfig({...composerConfig, format}); setTimeout(() => drawCurrentCanvasFrame(previewCurrentTime),50); }} className={`py-2 rounded-lg border text-[11px] font-bold ${composerConfig.format === format ? 'border-rose-300 bg-rose-50 text-rose-700' : 'border-slate-200 text-slate-600'}`}>{format}</button>
+                  ))}
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="text-[11px] font-medium text-slate-600">FPS
+                    <select value={composerConfig.fps} onChange={e => setComposerConfig({...composerConfig, fps:Number(e.target.value)})} className="mt-1 w-full p-2 rounded-lg border border-slate-200 bg-white text-xs"><option value={24}>24 fps</option><option value={30}>30 fps</option></select>
+                  </label>
+                  <label className="text-[11px] font-medium text-slate-600">Transition
+                    <select value={composerConfig.transitionType} onChange={e => setComposerConfig({...composerConfig, transitionType:e.target.value as TransitionType})} className="mt-1 w-full p-2 rounded-lg border border-slate-200 bg-white text-xs"><option value="crossfade">Crossfade</option><option value="dip_to_black">Dip to black</option><option value="slide_left">Slide left</option><option value="cut">Cut</option></select>
+                  </label>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="flex items-center justify-between rounded-lg bg-slate-50 p-2 text-[11px] text-slate-600"><span>Safe area</span><input type="checkbox" checked={composerConfig.showSafeAreaGuide} onChange={e => {setComposerConfig({...composerConfig, showSafeAreaGuide:e.target.checked}); setTimeout(()=>drawCurrentCanvasFrame(previewCurrentTime),50);}} /></label>
+                  <label className="flex items-center justify-between rounded-lg bg-slate-50 p-2 text-[11px] text-slate-600"><span>Transitions</span><input type="checkbox" checked={composerConfig.enableTransitions} onChange={e => setComposerConfig({...composerConfig, enableTransitions:e.target.checked})} /></label>
+                </div>
+              </div>
+              <button onClick={handleStartExport} className="w-full py-2.5 rounded-xl bg-rose-600 text-white text-xs font-bold flex items-center justify-center gap-2"><Download className="w-3.5 h-3.5" /> Xuất video</button>
             </div>
           )}
 
