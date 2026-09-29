@@ -37,7 +37,7 @@ import {
   VIDEO_FORMAT_RESOLUTIONS,
   TransitionType 
 } from '../../types/composer';
-import { TTSSpeedMode } from '../../services/audioEngine/types';
+import { AudioSegment, TTSSpeedMode } from '../../services/audioEngine/types';
 import { audioEngine } from '../../services/audioEngine/audioEngineService';
 import { visualEngine } from '../../services/visualEngine/visualEngineService';
 import { AVAILABLE_VOICES } from '../../services/audioEngine/voicePresets';
@@ -92,6 +92,7 @@ export const VideoComposerStudio: React.FC<VideoComposerStudioProps> = ({
   // Preview playback state
   const [isPlayingPreview, setIsPlayingPreview] = useState(false);
   const [previewCurrentTime, setPreviewCurrentTime] = useState(0);
+  const [activeAudioSegment, setActiveAudioSegment] = useState<AudioSegment | null>(null);
 
   // Export pipeline modal & progress
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
@@ -116,6 +117,7 @@ export const VideoComposerStudio: React.FC<VideoComposerStudioProps> = ({
       setEditedVoice(currentScene.voice || 'Kore');
       setIsEditingScene(false);
       setPreviewCurrentTime(0);
+      setActiveAudioSegment(null);
       drawCurrentCanvasFrame(0);
     }
   }, [activeSceneIndex, currentScene]);
@@ -162,13 +164,15 @@ export const VideoComposerStudio: React.FC<VideoComposerStudioProps> = ({
     if (isPlayingPreview) {
       audioControllerRef.current = audioEngine.playSceneAudio(
         currentScene,
-        (time) => {
+        (time, segment) => {
           setPreviewCurrentTime(time);
+          setActiveAudioSegment(segment);
           drawCurrentCanvasFrame(time);
         },
         () => {
           setIsPlayingPreview(false);
           setPreviewCurrentTime(0);
+          setActiveAudioSegment(null);
           drawCurrentCanvasFrame(0);
         }
       );
@@ -314,7 +318,7 @@ export const VideoComposerStudio: React.FC<VideoComposerStudioProps> = ({
         <div>
           <div className="flex items-center gap-2 text-xs font-bold text-rose-600 mb-1">
             <Film className="w-3.5 h-3.5" />
-            <span className="tracking-wider uppercase">VIDEO COMPOSER STUDIO · 1080P 24FPS</span>
+            <span className="tracking-wider uppercase">VIDEO COMPOSER</span>
           </div>
           <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
             <span>Dựng & Nối ghép bài giảng video hoàn chỉnh</span>
@@ -400,7 +404,7 @@ export const VideoComposerStudio: React.FC<VideoComposerStudioProps> = ({
             className="px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-2xs transition-all flex items-center gap-2"
           >
             <Download className="w-3.5 h-3.5" />
-            <span>Xuất toàn bộ Video (MP4)</span>
+            <span>Xuất video</span>
           </button>
         </div>
       </div>
@@ -408,7 +412,7 @@ export const VideoComposerStudio: React.FC<VideoComposerStudioProps> = ({
       {/* 2. Timeline Navigation of 8 Scenes */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 select-none">
         <span className="text-xs font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-1">
-          Scenes ({scenes.length}):
+          {scenes.length} scenes:
         </span>
         {scenes.map((s, idx) => {
           const isSelected = activeSceneIndex === idx;
@@ -493,8 +497,8 @@ export const VideoComposerStudio: React.FC<VideoComposerStudioProps> = ({
               </span>
             </div>
 
-            <div className="flex items-center gap-2 text-[11px] text-slate-400">
-              <span>Đang chọn: <strong>Scene {currentScene?.sceneId}</strong></span>
+            <div className="min-w-0 max-w-[48%] text-[11px] text-slate-400 text-right">
+              <span className="block truncate">{activeAudioSegment?.type === 'chinese_dialogue' ? `Đang đọc: ${activeAudioSegment.text}` : activeAudioSegment?.type === 'teacher_explanation' ? 'Đang giảng giải' : `Scene ${currentScene?.sceneId}`}</span>
             </div>
           </div>
         </div>
@@ -506,7 +510,7 @@ export const VideoComposerStudio: React.FC<VideoComposerStudioProps> = ({
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div>
               <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                10-Layer Scene Renderer
+                SCENE INSPECTOR
               </div>
               <h4 className="text-base font-bold text-slate-900">
                 SCENE {currentScene?.sceneId}: {currentScene?.type.toUpperCase()}
@@ -665,64 +669,30 @@ export const VideoComposerStudio: React.FC<VideoComposerStudioProps> = ({
           ) : (
             /* 10 Layers Status Display */
             <div className="space-y-2.5 text-xs">
-              <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                10 Thành phần đồ họa của Scene:
+              <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                <span>Layers</span>
+                <span className="font-normal normal-case text-slate-400">10 thành phần</span>
               </div>
 
-              <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden bg-slate-50/50">
-                <div className="p-2.5 flex items-center justify-between">
-                  <span className="text-slate-600 font-medium">1. Background Visual:</span>
-                  <span className="font-semibold text-slate-900">
-                    {visualEngine.getVisualForScene(currentScene?.sceneId)?.assetType?.toUpperCase() || 'Warm Paper'}
-                  </span>
-                </div>
-                <div className="p-2.5 flex items-center justify-between">
-                  <span className="text-slate-600 font-medium">2. Chinese Text Layer:</span>
-                  <span className="font-bold text-slate-900 truncate max-w-[200px]">
-                    {currentScene?.chineseText || 'None'}
-                  </span>
-                </div>
-                <div className="p-2.5 flex items-center justify-between">
-                  <span className="text-slate-600 font-medium">3. Pinyin Layer:</span>
-                  <span className="font-mono text-rose-600 truncate max-w-[200px]">
-                    {currentScene?.pinyin || 'None'}
-                  </span>
-                </div>
-                <div className="p-2.5 flex items-center justify-between">
-                  <span className="text-slate-600 font-medium">4. Vietnamese Layer:</span>
-                  <span className="italic text-slate-700 truncate max-w-[200px]">
-                    {currentScene?.vietnamese || 'None'}
-                  </span>
-                </div>
-                <div className="p-2.5 flex items-center justify-between">
-                  <span className="text-slate-600 font-medium">5. Speaker Name:</span>
-                  <span className="font-semibold text-rose-700">
-                    {currentScene?.characters?.join(', ') || 'Giáo viên'}
-                  </span>
-                </div>
-                <div className="p-2.5 flex items-center justify-between">
-                  <span className="text-slate-600 font-medium">6. Highlight Layer:</span>
-                  <span className="text-amber-700 font-semibold">Karaoke Timing Active</span>
-                </div>
-                <div className="p-2.5 flex items-center justify-between">
-                  <span className="text-slate-600 font-medium">7. Teacher Explanation:</span>
-                  <span className="text-slate-700">{currentScene?.teacherExplanation ? 'Có' : 'Không'}</span>
-                </div>
-                <div className="p-2.5 flex items-center justify-between">
-                  <span className="text-slate-600 font-medium">8. TTS Audio Track:</span>
-                  <span className="font-semibold text-emerald-700">
-                    {audioEngine.getAudioForScene(currentScene?.sceneId)?.duration || currentScene?.duration}s
-                  </span>
-                </div>
-                <div className="p-2.5 flex items-center justify-between">
-                  <span className="text-slate-600 font-medium">9. Sound Effect:</span>
-                  <span className="text-slate-700">Chime bell (D5-A5)</span>
-                </div>
-                <div className="p-2.5 flex items-center justify-between">
-                  <span className="text-slate-600 font-medium">10. Transition:</span>
-                  <span className="font-mono text-slate-700">{composerConfig.transitionType} (0.5s)</span>
-                </div>
-              </div>
+              <div className="grid grid-cols-2 gap-1.5">
+                {[
+                  ['Visual', visualEngine.getVisualForScene(currentScene?.sceneId)?.assetType?.toUpperCase() || 'Warm Paper'],
+                  ['Chinese', currentScene?.chineseText || '—'],
+                  ['Pinyin', currentScene?.pinyin || '—'],
+                  ['Vietnamese', currentScene?.vietnamese || '—'],
+                  ['Speaker', currentScene?.characters?.join(', ') || 'Giáo viên'],
+                  ['Karaoke', activeAudioSegment?.type === 'chinese_dialogue' ? 'Đang đọc' : 'Ready'],
+                  ['Explanation', currentScene?.teacherExplanation ? 'Có' : 'Không'],
+                  ['TTS', String(audioEngine.getAudioForScene(currentScene?.sceneId)?.duration || currentScene?.duration || 0) + 's'],
+                  ['SFX', composerConfig.enableChimeSoundEffect ? 'Chime' : 'Off'],
+                  ['Transition', composerConfig.enableTransitions ? composerConfig.transitionType + ' · ' + composerConfig.transitionDurationSec + 's' : 'Off'],
+                ].map(([label, value]) => (
+                  <div key={label} className="min-w-0 rounded-lg border border-slate-100 bg-slate-50 px-2.5 py-2">
+                    <div className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{label}</div>
+                    <div className="mt-0.5 truncate text-[11px] font-medium text-slate-700">{value}</div>
+                  </div>
+                ))}
+              </div>div>
             </div>
           )}
 
@@ -740,7 +710,7 @@ export const VideoComposerStudio: React.FC<VideoComposerStudioProps> = ({
               <div className="flex items-center gap-2">
                 <FileVideo className="w-5 h-5 text-rose-600" />
                 <h3 className="font-bold text-base text-slate-900">
-                  {exportStep === 'completed' ? 'Xuất Video Thành Công!' : 'Đang Dựng & Nối Ghép Video (MP4)...'}
+                  {exportStep === 'completed' ? 'Xuất video hoàn tất' : 'Đang dựng video...'}
                 </h3>
               </div>
             </div>
@@ -796,7 +766,7 @@ export const VideoComposerStudio: React.FC<VideoComposerStudioProps> = ({
                 <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex items-center gap-2 text-xs text-emerald-900 font-medium">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                   <span>
-                    Toàn bộ {scenes.length} Scenes đã được đóng gói ({exportResult?.mimeType}, {exportResult?.durationSeconds}s, {exportResult?.fileSizeMb} MB).
+                    Đã đóng gói {scenes.length} scenes ({exportResult?.mimeType}, {exportResult?.durationSeconds}s, {exportResult?.fileSizeMb} MB).
                   </span>
                 </div>
 
@@ -812,7 +782,7 @@ export const VideoComposerStudio: React.FC<VideoComposerStudioProps> = ({
                   </div>
                 )}
 
-                {/* 3 Nút theo đúng yêu cầu người dùng: Download MP4, Create another lesson, Edit lesson */}
+                {/* Actions */}
                 <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-2">
                   <button
                     onClick={handleDownloadMp4}
