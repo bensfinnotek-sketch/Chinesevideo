@@ -217,7 +217,7 @@ export function renderSceneCanvasFrame({
       });
       ctx.restore();
 
-      // 3. Dòng 2: Pinyin Layer — highlight đúng phrase đang phát.
+      // 3. Dòng 2: Pinyin Layer — đặt từng âm tiết ngay dưới chữ Hán tương ứng.
       if (turn.pinyin) {
         ctx.save();
         const pinyinFontSize = Math.max(16, Math.floor(height * 0.028));
@@ -226,33 +226,41 @@ export function renderSceneCanvasFrame({
         const basePinyinColor = isDark ? '#CBD5E1' : '#64748B';
         const activePinyinColor = isDark ? '#FDA4AF' : '#E11D48';
 
-        ctx.fillStyle = basePinyinColor;
-        ctx.fillText(turn.pinyin, textOffsetX, pinyinY);
+        const chineseChars = Array.from(normalizeKaraokeText(turn.chinese));
+        const pinyinSyllables = splitPinyinSyllablesForRender(turn.pinyin);
+        const activePhrase = activeKaraokeToken?.text
+          ? normalizeKaraokeText(activeKaraokeToken.text)
+          : '';
+        const phraseStart = activePhrase ? normalizeKaraokeText(turn.chinese).indexOf(activePhrase) : -1;
+        const phraseEnd = phraseStart >= 0 ? phraseStart + activePhrase.length : -1;
 
-        if (activeKaraokeToken?.pinyin && activeSegment?.type === 'chinese_dialogue') {
-          const phrase = normalizeKaraokeText(activeKaraokeToken.text);
-          const fullText = normalizeKaraokeText(turn.chinese);
-          const phraseIndex = phrase ? fullText.indexOf(phrase) : -1;
+        let chineseCursorX = textOffsetX;
+        chineseChars.forEach((char, charIndex) => {
+          const charWidth = ctx.measureText(char).width;
+          const syllable = pinyinSyllables[charIndex] || '';
+          if (syllable) {
+            const syllableWidth = ctx.measureText(syllable).width;
+            const syllableX = chineseCursorX + Math.max(0, (charWidth - syllableWidth) / 2);
+            const active = activeSegment?.type === 'chinese_dialogue'
+              && phraseStart >= 0
+              && charIndex >= phraseStart
+              && charIndex < phraseEnd;
 
-          if (phraseIndex >= 0 && fullText.length > 0) {
-            const prefixRatio = phraseIndex / fullText.length;
-            const phraseRatio = Math.max(phrase.length, 1) / fullText.length;
-            const pinyinWidth = ctx.measureText(turn.pinyin).width;
-            const activeWidth = Math.max(8, pinyinWidth * phraseRatio);
-            const activeX = textOffsetX + pinyinWidth * prefixRatio;
+            ctx.fillStyle = active ? activePinyinColor : basePinyinColor;
+            ctx.fillText(syllable, syllableX, pinyinY);
+          }
+          chineseCursorX += charWidth + 2;
+        });
 
-            ctx.save();
-            ctx.beginPath();
-            ctx.rect(activeX - 2, pinyinY - pinyinFontSize, activeWidth + 4, pinyinFontSize * 1.25);
-            ctx.clip();
-            ctx.fillStyle = activePinyinColor;
-            ctx.fillText(turn.pinyin, textOffsetX, pinyinY);
-            ctx.restore();
-          } else {
-            // Nếu phrase không khớp tuyệt đối với dòng hiện tại, vẫn giữ Pinyin
-            // của phrase để tránh mất liên kết chữ Hán ↔ Pinyin.
-            ctx.fillStyle = activePinyinColor;
-            ctx.fillText(activeKaraokeToken.pinyin, textOffsetX, pinyinY);
+        // Fallback cho Pinyin không thể ghép 1-1 với chữ Hán (ví dụ tên Latin).
+        if (!pinyinSyllables.length || pinyinSyllables.length !== chineseChars.length) {
+          const fallback = activeKaraokeToken?.pinyin && activeSegment?.type === 'chinese_dialogue'
+            ? activeKaraokeToken.pinyin
+            : turn.pinyin;
+          if (fallback) {
+            ctx.fillStyle = activeKaraokeToken?.pinyin ? activePinyinColor : basePinyinColor;
+            ctx.font = `500 ${pinyinFontSize}px monospace, sans-serif`;
+            ctx.fillText(fallback, textOffsetX, pinyinY);
           }
         }
         ctx.restore();
@@ -363,6 +371,14 @@ export function renderSceneCanvasFrame({
     }
     ctx.restore();
   }
+}
+
+function splitPinyinSyllablesForRender(value: string): string[] {
+  return value
+    .trim()
+    .replace(/[，。！？、；：,.!?;:]+/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean);
 }
 
 function normalizeKaraokeText(value: string): string {
