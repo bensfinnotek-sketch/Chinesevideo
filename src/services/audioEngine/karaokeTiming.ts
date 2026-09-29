@@ -7,6 +7,13 @@ function normalize(value: string): string {
   return value.replace(PUNCTUATION, '').trim();
 }
 
+function splitSmartClauses(text: string): string[] {
+  return text
+    .split(/[，、；：,.!?！？。]+/)
+    .map(part => part.trim())
+    .filter(Boolean);
+}
+
 function buildPhraseUnits(text: string, preferredPhrases: string[] = []): string[] {
   const source = text.trim();
   if (!source) return [];
@@ -58,7 +65,7 @@ export function buildKaraokeTokens(
   segments.forEach((segment, segmentIndex) => {
     if (segment.type !== 'chinese_dialogue' || segment.end <= segment.start) return;
 
-    const units = buildPhraseUnits(segment.text, preferredPhrases);
+    const units = splitSmartClauses(segment.text).flatMap(clause => buildPhraseUnits(clause, preferredPhrases));
     if (!units.length) return;
 
     const weights = units.map(unit => Math.max(1, normalize(unit).length));
