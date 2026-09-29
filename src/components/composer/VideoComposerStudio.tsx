@@ -1,3 +1,4 @@
+import { buildKaraokeTokens } from '../../services/audioEngine/karaokeTiming';
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Play, 
@@ -216,6 +217,26 @@ export const VideoComposerStudio: React.FC<VideoComposerStudioProps> = ({
     setPreviewEndTime(endTime);
     setIsPlayingPreview(false);
     window.setTimeout(() => setIsPlayingPreview(true), 0);
+  };
+
+  const handleAutoGenerateKaraoke = () => {
+    if (!currentScene) return;
+    const metadata = audioEngine.getAudioForScene(currentScene.sceneId);
+    if (!metadata) return;
+    const tokens = buildKaraokeTokens(metadata.segments, currentScene.highlightWords || []);
+    if (!tokens.length) {
+      showToast('Scene này chưa có đoạn thoại tiếng Trung để tạo Karaoke.');
+      return;
+    }
+    audioEngine.updateKaraokeTokens(currentScene.sceneId, tokens);
+    const updated = [...scenes];
+    updated[activeSceneIndex] = {
+      ...currentScene,
+      karaokeTiming: tokens.map(({ text, start, end }) => ({ text, start, end })),
+    };
+    onUpdateScenes(updated);
+    drawCurrentCanvasFrame(previewCurrentTime);
+    showToast('Đã tạo lại ' + tokens.length + ' phrase Karaoke từ Audio hiện tại.');
   };
 
   const handleKaraokeTimingChange = (tokens: import('../../services/audioEngine/types').KaraokeToken[]) => {
@@ -489,6 +510,7 @@ export const VideoComposerStudio: React.FC<VideoComposerStudioProps> = ({
           drawCurrentCanvasFrame={drawCurrentCanvasFrame}
           onKaraokeTimingChange={handleKaraokeTimingChange}
           onPlayKaraokePhrase={handlePlayKaraokePhrase}
+          onAutoGenerateKaraoke={handleAutoGenerateKaraoke}
         />
       </div>
 
