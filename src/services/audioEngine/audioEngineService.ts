@@ -197,7 +197,7 @@ export class AudioEngineService {
     }
 
     // 2. Fallback sử dụng Web Speech API
-    this.fallbackPlayWebSpeech(scene, metadata, onTimeUpdate, onEnded);
+    this.fallbackPlayWebSpeech(scene, metadata, onTimeUpdate, onEnded, startAtSec);
     return {
       stop: () => this.stopAudio(),
     };
