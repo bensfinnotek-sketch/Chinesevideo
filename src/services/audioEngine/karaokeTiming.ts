@@ -82,3 +82,36 @@ export function buildKaraokeTokens(
 
   return tokens;
 }
+
+/**
+ * Convert manually edited scene timing into runtime karaoke tokens.
+ * This keeps manual edits intact when TTS audio is regenerated.
+ */
+export function sceneKaraokeTimingToTokens(
+  timing: Array<{ text: string; start: number; end: number }> | undefined,
+  segments: AudioSegment[],
+  duration: number
+): KaraokeToken[] {
+  if (!timing?.length) return [];
+
+  const safeDuration = Math.max(0.05, duration || 0.05);
+  return timing
+    .map((item, index) => {
+      const start = Math.max(0, Math.min(safeDuration, Number(item.start) || 0));
+      const end = Math.max(0, Math.min(safeDuration, Number(item.end) || 0));
+      const sourceSegmentIndex = segments.findIndex(
+        segment => segment.type === 'chinese_dialogue' && start >= segment.start && start <= segment.end
+      );
+      return {
+        text: String(item.text || '').trim(),
+        start,
+        end,
+        index,
+        sourceSegmentIndex,
+      };
+    })
+    .filter(token => token.text && token.end > token.start)
+    .sort((a, b) => a.start - b.start)
+    .map((token, index) => ({ ...token, index }));
+}
+\n
