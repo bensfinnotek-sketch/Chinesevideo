@@ -222,8 +222,9 @@ export function renderSceneCanvasFrame({
         ctx.save();
         const pinyinFontSize = Math.max(16, Math.floor(height * 0.028));
         ctx.font = `500 ${pinyinFontSize}px monospace, sans-serif`;
+        const visiblePinyin = activeKaraokeToken?.pinyin || turn.pinyin;
         ctx.fillStyle = isDark ? '#FB7185' : '#E11D48';
-        ctx.fillText(turn.pinyin, textOffsetX, turnY + chineseFontSize * 0.65);
+        ctx.fillText(visiblePinyin, textOffsetX, turnY + chineseFontSize * 0.65);
         ctx.restore();
       }
 
