@@ -179,7 +179,9 @@ export function renderSceneCanvasFrame({
       let cursorX = textOffsetX;
       turn.tokens.forEach((tok) => {
         const isHighlight = tok.isHighlight;
-        const isSpokenNow = activeSegment && (activeSegment.text.includes(tok.text) || tok.text.includes(activeSegment.text));
+        const normalizedSegment = activeSegment?.text?.replace(/[，。！？、；：,.!?;:\s]/g, '') || '';
+        const normalizedToken = tok.text.replace(/[，。！？、；：,.!?;:\s]/g, '');
+        const isSpokenNow = activeSegment?.type === 'chinese_dialogue' && Boolean(normalizedToken) && (normalizedSegment === normalizedToken || normalizedSegment.includes(normalizedToken) || normalizedToken.includes(normalizedSegment));
 
         const tokenW = ctx.measureText(tok.text).width;
 
