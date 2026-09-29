@@ -126,7 +126,7 @@ export const KaraokeTimingEditor: React.FC<KaraokeTimingEditorProps> = ({
       } else {
         const min = token.start + 0.01;
         const max = nextToken ? nextToken.start - 0.01 : duration;
-        emit(safeTokens.map((item, itemIndex) => itemIndex === tokenIndex ? { ...item, end: clamp(value, min, max) } : item));
+        emit(safeTokens.map((item, itemIndex) => itemIndex === tokenIndex ? { ...item, end: snapTime(value, min, max) } : item));
       }
     };
 
