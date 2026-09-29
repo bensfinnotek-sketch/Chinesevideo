@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Check, GitMerge, Scissors, Trash2, Magnet } from 'lucide-react';
+import { Check, GitMerge, Scissors, Trash2, Magnet, Wand2 } from 'lucide-react';
 import { KaraokeToken } from '../../services/audioEngine/types';
 
 interface KaraokeTimingEditorProps {
@@ -8,6 +8,7 @@ interface KaraokeTimingEditorProps {
   currentTime: number;
   onChange: (tokens: KaraokeToken[]) => void;
   onPlayPhrase: (startTime: number, endTime: number) => void;
+  onAutoGenerate: () => void;
 }
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
@@ -18,6 +19,7 @@ export const KaraokeTimingEditor: React.FC<KaraokeTimingEditorProps> = ({
   currentTime,
   onChange,
   onPlayPhrase,
+  onAutoGenerate,
 }) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [draftText, setDraftText] = useState('');
@@ -151,6 +153,13 @@ export const KaraokeTimingEditor: React.FC<KaraokeTimingEditorProps> = ({
           <div className="text-[10px] text-rose-600/70">{safeTokens.length} phrase · chỉnh trực tiếp timeline</div>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={onAutoGenerate}
+            className="rounded-lg border border-violet-200 bg-violet-50 px-2 py-1 text-[9px] font-semibold text-violet-700 hover:bg-violet-100 flex items-center gap-1"
+            title="Tạo lại phrase timing từ các đoạn thoại hiện có, không tạo lại Audio"
+          >
+            <Wand2 className="w-3 h-3" /> Tạo lại tự động
+          </button>
           <button
             onClick={() => setSnapEnabled(value => !value)}
             className={`rounded-lg border px-2 py-1 text-[9px] font-semibold flex items-center gap-1 ${snapEnabled ? 'border-rose-300 bg-rose-50 text-rose-700' : 'border-slate-200 bg-white text-slate-500'}`}
