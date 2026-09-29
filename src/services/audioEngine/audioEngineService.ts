@@ -11,6 +11,7 @@ import { GeminiTTSProvider } from './providers/geminiTTSProvider';
 import { WebSpeechTTSProvider } from './providers/webSpeechTTSProvider';
 import { DEFAULT_AUDIO_ENGINE_SETTINGS } from './voicePresets';
 import { speakChinese, stopSpeaking } from '../audioSynthesis';
+import { buildKaraokeTokens } from './karaokeTiming';
 
 export class AudioEngineService {
   private static instance: AudioEngineService;
@@ -89,6 +90,7 @@ export class AudioEngineService {
       speechModeTarget: this.settings.speechModeTarget,
     });
 
+    metadata.karaokeTokens = buildKaraokeTokens(metadata.segments, scene.highlightWords || []);
     this.sceneAudios.set(String(scene.sceneId), metadata);
     return metadata;
   }
