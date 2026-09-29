@@ -134,29 +134,42 @@ export class VideoComposerService {
 
     recorder.start(100);
 
-    // Duyệt qua từng scene và render các frame theo thời gian
+    // Render từng scene theo đúng thời gian thực ở FPS cấu hình.
+    // MediaRecorder chỉ ghi những frame thực sự được đẩy vào Canvas stream;
+    // vì vậy không thể dùng vài frame mô phỏng rồi gắn duration giả.
     let totalLessonSeconds = 0;
+    const frameIntervalMs = 1000 / Math.max(1, config.fps || 24);
+
     for (let sIdx = 0; sIdx < scenes.length; sIdx++) {
       const scene = scenes[sIdx];
       const audioMeta = audioEngine.getAudioForScene(scene.sceneId);
       const visualMeta = visualEngine.getVisualForScene(scene.sceneId);
       const imgElem = imageCache.get(String(scene.sceneId));
 
-      const sceneDuration = audioMeta?.duration || scene.duration || 15;
+      const sceneDuration = Math.max(
+        0.1,
+        audioMeta?.duration || scene.duration || 15
+      );
       totalLessonSeconds += sceneDuration;
 
-      // Phát âm thanh tiếng chuông nhẹ nếu bật Chime
       if (config.enableChimeSoundEffect && audioContext && audioDest) {
         playChime(audioContext, audioDest);
       }
 
-      // Giả lập tốc độ render frame (chạy nhanh hơn thời gian thực để xuất video trong 3-5 giây)
-      const simulationSteps = 12; // 12 khung hình mô phỏng dòng thời gian
-      for (let step = 0; step <= simulationSteps; step++) {
-        const timeInScene = (step / simulationSteps) * sceneDuration;
-        
-        // Hiệu ứng transition ở 2 frame đầu
-        const transitionProgress = step < 2 ? step / 2 : 1;
+      // Audio và video chạy đồng bộ trong cùng thời gian scene.
+      const audioPlayback = audioContext && audioDest && audioMeta?.audioUrl
+        ? playAudioTrack(audioContext, audioDest, audioMeta.audioUrl, sceneDuration)
+        : Promise.resolve();
+
+      const startedAt = performance.now();
+      let frameIndex = 0;
+
+      while ((performance.now() - startedAt) / 1000 < sceneDuration) {
+        const elapsed = (performance.now() - startedAt) / 1000;
+        const timeInScene = Math.min(elapsed, sceneDuration);
+        const transitionProgress = elapsed < config.transitionDurationSec
+          ? elapsed / Math.max(0.001, config.transitionDurationSec)
+          : 1;
 
         renderSceneCanvasFrame({
           ctx,
@@ -172,10 +185,31 @@ export class VideoComposerService {
           imageElement: imgElem,
         });
 
-        await sleep(50);
+        frameIndex++;
+        await sleep(frameIntervalMs);
       }
 
-      onProgress('combining_video', 85 + Math.round((sIdx / totalScenes) * 10), `Đã nối Scene ${scene.sceneId}/${totalScenes}...`);
+      // Đảm bảo frame cuối của scene được ghi trước khi chuyển scene.
+      renderSceneCanvasFrame({
+        ctx,
+        width: resolution.width,
+        height: resolution.height,
+        scene,
+        visualMeta,
+        audioMeta,
+        currentTimeInScene: sceneDuration,
+        config,
+        transitionProgress: 1,
+        transitionType: config.transitionType,
+        imageElement: imgElem,
+      });
+
+      await audioPlayback;
+      onProgress(
+        'combining_video',
+        85 + Math.round(((sIdx + 1) / totalScenes) * 10),
+        `Đã render & nối Scene ${scene.sceneId}/${totalScenes} (${frameIndex} frames)...`
+      );
     }
 
     // 6. Finalizing
@@ -207,6 +241,56 @@ export class VideoComposerService {
 
     onProgress('completed', 100, 'Video bài giảng đã xuất bản thành công!');
     return exportResult;
+  }
+}
+
+async function playAudioTrack(
+  ctx: AudioContext,
+  dest: MediaStreamAudioDestinationNode,
+  audioUrl: string,
+  fallbackDuration: number
+): Promise<void> {
+  const audio = new Audio(audioUrl);
+  audio.preload = 'auto';
+  audio.crossOrigin = 'anonymous';
+
+  try {
+    const source = ctx.createMediaElementSource(audio);
+    source.connect(dest);
+
+    await new Promise<void>((resolve) => {
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        audio.pause();
+        audio.currentTime = 0;
+        resolve();
+      };
+
+      audio.onended = finish;
+      audio.onerror = finish;
+
+      const timeout = window.setTimeout(finish, (fallbackDuration + 1) * 1000);
+
+      audio.onended = () => {
+        window.clearTimeout(timeout);
+        finish();
+      };
+      audio.onerror = () => {
+        window.clearTimeout(timeout);
+        finish();
+      };
+
+      audio.play().catch(() => {
+        window.clearTimeout(timeout);
+        finish();
+      });
+    });
+  } catch {
+    // Some browsers cannot connect a given audio URL to Web Audio.
+    // The video remains valid; the renderer simply records silence.
+    await sleep(fallbackDuration * 1000);
   }
 }
 
