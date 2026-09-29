@@ -158,7 +158,7 @@ export const KaraokeTimingEditor: React.FC<KaraokeTimingEditorProps> = ({
             className="rounded-lg border border-violet-200 bg-violet-50 px-2 py-1 text-[9px] font-semibold text-violet-700 hover:bg-violet-100 flex items-center gap-1"
             title="Tạo lại phrase timing từ các đoạn thoại hiện có, không tạo lại Audio"
           >
-            <Wand2 className="w-3 h-3" /> Tạo lại tự động
+            <Wand2 className="w-3 h-3" /> Tạo phrase thông minh
           </button>
           <button
             onClick={() => setSnapEnabled(value => !value)}
