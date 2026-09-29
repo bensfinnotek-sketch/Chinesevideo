@@ -105,11 +105,11 @@ export const KaraokeTimingEditor: React.FC<KaraokeTimingEditorProps> = ({
       if (kind === 'start') {
         const min = previous ? previous.end + 0.01 : 0;
         const max = token.end - 0.01;
-        updateSelected({ start: clamp(value, min, max) });
+        emit(safeTokens.map((item, itemIndex) => itemIndex === tokenIndex ? { ...item, start: clamp(value, min, max) } : item));
       } else {
         const min = token.start + 0.01;
         const max = nextToken ? nextToken.start - 0.01 : duration;
-        updateSelected({ end: clamp(value, min, max) });
+        emit(safeTokens.map((item, itemIndex) => itemIndex === tokenIndex ? { ...item, end: clamp(value, min, max) } : item));
       }
     };
 
