@@ -43,6 +43,7 @@ interface SceneInspectorProps {
   drawCurrentCanvasFrame: (timeInSec: number) => void;
   onKaraokeTimingChange: (tokens: KaraokeToken[]) => void;
   onPlayKaraokePhrase: (startTime: number, endTime: number) => void;
+  onAutoGenerateKaraoke: () => void;
 }
 
 export const SceneInspector: React.FC<SceneInspectorProps> = ({
@@ -77,6 +78,7 @@ export const SceneInspector: React.FC<SceneInspectorProps> = ({
   drawCurrentCanvasFrame,
   onKaraokeTimingChange,
   onPlayKaraokePhrase,
+  onAutoGenerateKaraoke,
 }) => (
         <div className="lg:col-span-5 bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-5 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
           
@@ -341,6 +343,7 @@ export const SceneInspector: React.FC<SceneInspectorProps> = ({
                 currentTime={previewCurrentTime}
                 onChange={onKaraokeTimingChange}
                 onPlayPhrase={onPlayKaraokePhrase}
+                onAutoGenerate={onAutoGenerateKaraoke}
               />
               </div>
 
