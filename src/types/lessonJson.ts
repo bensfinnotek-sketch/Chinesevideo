@@ -54,6 +54,8 @@ export interface LessonJsonScene {
 
   dialogue?: LessonJsonDialogueLine[];
   highlightWords?: (string | LessonJsonHighlight)[];
+  /** Optional phrase timing authored by the Composer editor. */
+  karaokeTiming?: LessonJsonHighlight[];
 
   visualPrompt?: string;
   audio: LessonJsonAudioConfig;
@@ -161,6 +163,7 @@ export function lessonSceneToLessonJson(
     vietnamese: scene.vietnamese,
     teacherExplanation: scene.teacherExplanation,
     highlightWords: scene.highlightWords || [],
+    karaokeTiming: scene.karaokeTiming?.map(({ text, start, end }) => ({ text, start, end })),
     visualPrompt: scene.visualPrompt,
     audio: {
       language: 'zh-CN',
