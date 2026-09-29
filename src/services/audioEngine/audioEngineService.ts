@@ -154,7 +154,8 @@ export class AudioEngineService {
   public playSceneAudio(
     scene: LessonScene,
     onTimeUpdate?: (currentTime: number, activeSegment: AudioSegment | null) => void,
-    onEnded?: () => void
+    onEnded?: () => void,
+    startAtSec: number = 0
   ): { stop: () => void } {
     this.stopAudio();
 
@@ -169,6 +170,7 @@ export class AudioEngineService {
 
       const rate = this.settings.speedMode === 'very_slow' ? 0.7 : this.settings.speedMode === 'slow' ? 0.85 : 1.0;
       audio.playbackRate = rate;
+      audio.currentTime = Math.max(0, Math.min(startAtSec, metadata.duration || startAtSec));
 
       const updateHandler = () => {
         const currentSec = audio.currentTime;
@@ -186,7 +188,7 @@ export class AudioEngineService {
 
       audio.play().catch(err => {
         console.warn('HTMLAudioElement play failed, falling back to Web Speech:', err);
-        this.fallbackPlayWebSpeech(scene, metadata, onTimeUpdate, onEnded);
+        this.fallbackPlayWebSpeech(scene, metadata, onTimeUpdate, onEnded, startAtSec);
       });
 
       return {
@@ -205,7 +207,8 @@ export class AudioEngineService {
     scene: LessonScene,
     metadata?: AudioMetadata,
     onTimeUpdate?: (currentTime: number, activeSegment: AudioSegment | null) => void,
-    onEnded?: () => void
+    onEnded?: () => void,
+    startAtSec: number = 0
   ) {
     const textToSpeak = scene.chineseText || scene.teacherExplanation || '';
     const speed = this.settings.speedMode === 'very_slow' ? 0.65 : this.settings.speedMode === 'slow' ? 0.8 : 1.0;
@@ -213,7 +216,7 @@ export class AudioEngineService {
 
     speakChinese(textToSpeak, speed);
 
-    let currentSec = 0;
+    let currentSec = Math.max(0, startAtSec);
     const intervalMs = 100;
     this.playbackTimer = setInterval(() => {
       currentSec += intervalMs / 1000;
