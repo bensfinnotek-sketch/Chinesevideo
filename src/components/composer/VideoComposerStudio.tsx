@@ -95,6 +95,7 @@ export const VideoComposerStudio: React.FC<VideoComposerStudioProps> = ({
   const [isPlayingPreview, setIsPlayingPreview] = useState(false);
   const [previewCurrentTime, setPreviewCurrentTime] = useState(0);
   const [previewStartTime, setPreviewStartTime] = useState(0);
+  const [previewEndTime, setPreviewEndTime] = useState<number | undefined>(undefined);
   const [activeAudioSegment, setActiveAudioSegment] = useState<AudioSegment | null>(null);
 
   // Export pipeline modal & progress
@@ -178,7 +179,7 @@ export const VideoComposerStudio: React.FC<VideoComposerStudioProps> = ({
           setActiveAudioSegment(null);
           drawCurrentCanvasFrame(0);
         }
-      , previewStartTime);
+      , previewStartTime, previewEndTime);
     } else {
       if (audioControllerRef.current) {
         audioControllerRef.current.stop();
@@ -190,7 +191,7 @@ export const VideoComposerStudio: React.FC<VideoComposerStudioProps> = ({
         audioControllerRef.current.stop();
       }
     };
-  }, [isPlayingPreview, activeSceneIndex, previewStartTime]);
+  }, [isPlayingPreview, activeSceneIndex, previewStartTime, previewEndTime]);
 
   // Lưu chỉnh sửa Scene
   const handleSaveSceneEdits = () => {
@@ -209,9 +210,10 @@ export const VideoComposerStudio: React.FC<VideoComposerStudioProps> = ({
     drawCurrentCanvasFrame(previewCurrentTime);
   };
 
-  const handlePlayKaraokePhrase = (startTime: number) => {
+  const handlePlayKaraokePhrase = (startTime: number, endTime?: number) => {
     setPreviewStartTime(Math.max(0, startTime));
     setPreviewCurrentTime(Math.max(0, startTime));
+    setPreviewEndTime(endTime);
     setIsPlayingPreview(false);
     window.setTimeout(() => setIsPlayingPreview(true), 0);
   };
