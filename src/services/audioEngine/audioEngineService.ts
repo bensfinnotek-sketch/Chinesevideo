@@ -162,7 +162,8 @@ export class AudioEngineService {
     scene: LessonScene,
     onTimeUpdate?: (currentTime: number, activeSegment: AudioSegment | null) => void,
     onEnded?: () => void,
-    startAtSec: number = 0
+    startAtSec: number = 0,
+    endAtSec?: number
   ): { stop: () => void } {
     this.stopAudio();
 
@@ -181,6 +182,11 @@ export class AudioEngineService {
 
       const updateHandler = () => {
         const currentSec = audio.currentTime;
+        if (endAtSec !== undefined && currentSec >= endAtSec) {
+          this.stopAudio();
+          if (onEnded) onEnded();
+          return;
+        }
         const activeSeg = metadata.segments.find(s => currentSec >= s.start && currentSec <= s.end) || null;
         if (onTimeUpdate) {
           onTimeUpdate(currentSec, activeSeg);
@@ -195,7 +201,7 @@ export class AudioEngineService {
 
       audio.play().catch(err => {
         console.warn('HTMLAudioElement play failed, falling back to Web Speech:', err);
-        this.fallbackPlayWebSpeech(scene, metadata, onTimeUpdate, onEnded, startAtSec);
+        this.fallbackPlayWebSpeech(scene, metadata, onTimeUpdate, onEnded, startAtSec, endAtSec);
       });
 
       return {
@@ -204,7 +210,7 @@ export class AudioEngineService {
     }
 
     // 2. Fallback sử dụng Web Speech API
-    this.fallbackPlayWebSpeech(scene, metadata, onTimeUpdate, onEnded, startAtSec);
+    this.fallbackPlayWebSpeech(scene, metadata, onTimeUpdate, onEnded, startAtSec, endAtSec);
     return {
       stop: () => this.stopAudio(),
     };
@@ -215,7 +221,8 @@ export class AudioEngineService {
     metadata?: AudioMetadata,
     onTimeUpdate?: (currentTime: number, activeSegment: AudioSegment | null) => void,
     onEnded?: () => void,
-    startAtSec: number = 0
+    startAtSec: number = 0,
+    endAtSec?: number
   ) {
     const textToSpeak = scene.chineseText || scene.teacherExplanation || '';
     const speed = this.settings.speedMode === 'very_slow' ? 0.65 : this.settings.speedMode === 'slow' ? 0.8 : 1.0;
@@ -231,6 +238,12 @@ export class AudioEngineService {
 
       if (onTimeUpdate) {
         onTimeUpdate(currentSec, activeSeg);
+      }
+
+      if (endAtSec !== undefined && currentSec >= endAtSec) {
+        this.stopAudio();
+        if (onEnded) onEnded();
+        return;
       }
 
       if (currentSec >= duration) {
