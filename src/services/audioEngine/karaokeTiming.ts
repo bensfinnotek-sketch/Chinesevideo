@@ -105,6 +105,7 @@ export function buildKaraokeTokens(
       const end = index === units.length - 1 ? segment.end : Math.min(segment.end, cursor + share);
       tokens.push({
         text: unit,
+        pinyin: pinyinUnits[index] || '',
         start: cursor,
         end,
         index: globalIndex++,
@@ -133,11 +134,26 @@ export function sceneKaraokeTimingToTokens(
     .map((item, index) => {
       const start = Math.max(0, Math.min(safeDuration, Number(item.start) || 0));
       const end = Math.max(0, Math.min(safeDuration, Number(item.end) || 0));
+      const text = String(item.text || '').trim();
       const sourceSegmentIndex = segments.findIndex(
-        segment => segment.type === 'chinese_dialogue' && start >= segment.start && start <= segment.end
+        segment =>
+          segment.type === 'chinese_dialogue' &&
+          end > segment.start &&
+          start < segment.end
+      );
+      const sourceSegment = sourceSegmentIndex >= 0 ? segments[sourceSegmentIndex] : undefined;
+      const generated = sourceSegment
+        ? buildKaraokeTokens([sourceSegment], [text])
+        : [];
+      const normalizedText = normalize(text);
+      const matched = generated.find(
+        token => normalize(token.text) === normalizedText
+      ) || generated.find(
+        token => normalize(token.text).includes(normalizedText) || normalizedText.includes(normalize(token.text))
       );
       return {
-        text: String(item.text || '').trim(),
+        text,
+        pinyin: matched?.pinyin || '',
         start,
         end,
         index,
