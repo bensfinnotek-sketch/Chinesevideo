@@ -637,9 +637,8 @@ export const VideoComposerStudio: React.FC<VideoComposerStudioProps> = ({
               </div>
             </div>
           )}
-
-          )}          </>
-
+          </>
+          )}
 
           {inspectorTab === 'audio' && (
             <div className="space-y-3">
