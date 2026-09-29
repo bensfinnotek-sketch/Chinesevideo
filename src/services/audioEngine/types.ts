@@ -21,6 +21,7 @@ export type TTSProviderId = 'gemini_tts' | 'web_speech';
 export interface KaraokeToken {
   text: string;
   pinyin?: string;
+  pinyinSyllables?: string[];
   start: number;
   end: number;
   index: number;
