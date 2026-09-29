@@ -38,6 +38,7 @@ export interface LessonJsonDialogueLine {
 
 export interface LessonJsonHighlight {
   text: string;
+  pinyin?: string;
   start?: number;
   end?: number;
 }
