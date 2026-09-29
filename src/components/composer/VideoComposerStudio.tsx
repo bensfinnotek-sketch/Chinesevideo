@@ -484,6 +484,7 @@ export const VideoComposerStudio: React.FC<VideoComposerStudioProps> = ({
                 onClick={() => {
                   setIsPlayingPreview(false);
                   setPreviewCurrentTime(0);
+                  setActiveAudioSegment(null);
                   drawCurrentCanvasFrame(0);
                 }}
                 className="p-2 text-slate-400 hover:text-white rounded-lg"
@@ -692,7 +693,7 @@ export const VideoComposerStudio: React.FC<VideoComposerStudioProps> = ({
                     <div className="mt-0.5 truncate text-[11px] font-medium text-slate-700">{value}</div>
                   </div>
                 ))}
-              </div>div>
+              </div>
             </div>
           )}
 
