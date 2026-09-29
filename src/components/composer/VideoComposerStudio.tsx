@@ -208,6 +208,18 @@ export const VideoComposerStudio: React.FC<VideoComposerStudioProps> = ({
     drawCurrentCanvasFrame(previewCurrentTime);
   };
 
+  const handleKaraokeTimingChange = (tokens: import('../../services/audioEngine/types').KaraokeToken[]) => {
+    if (!currentScene) return;
+    audioEngine.updateKaraokeTokens(currentScene.sceneId, tokens);
+    const updated = [...scenes];
+    updated[activeSceneIndex] = {
+      ...currentScene,
+      karaokeTiming: tokens.map(({ text, start, end }) => ({ text, start, end })),
+    };
+    onUpdateScenes(updated);
+    drawCurrentCanvasFrame(previewCurrentTime);
+  };
+
   // 1. Regenerate Scene
   const handleRegenerateScene = async () => {
     const updated = [...scenes];
@@ -465,6 +477,7 @@ export const VideoComposerStudio: React.FC<VideoComposerStudioProps> = ({
           handleRegenerateVisual={handleRegenerateVisual}
           handleStartExport={handleStartExport}
           drawCurrentCanvasFrame={drawCurrentCanvasFrame}
+          onKaraokeTimingChange={handleKaraokeTimingChange}
         />
       </div>
 
