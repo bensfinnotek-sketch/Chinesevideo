@@ -18,6 +18,14 @@ export type TTSSpeedMode = 'normal' | 'slow' | 'very_slow';
 
 export type TTSProviderId = 'gemini_tts' | 'web_speech';
 
+export interface KaraokeToken {
+  text: string;
+  start: number;
+  end: number;
+  index: number;
+  sourceSegmentIndex: number;
+}
+
 export interface AudioSegment {
   text: string;
   start: number; // thời điểm bắt đầu (giây)
@@ -36,6 +44,7 @@ export interface AudioMetadata {
   voice: string;
   speedMode: TTSSpeedMode;
   segments: AudioSegment[];
+  karaokeTokens?: KaraokeToken[];
   createdAt?: number;
   provider?: string;
   sceneType?: string;
