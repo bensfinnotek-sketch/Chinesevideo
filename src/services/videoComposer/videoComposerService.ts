@@ -12,7 +12,9 @@ import { renderSceneCanvasFrame } from './canvasRenderer';
 export interface ExportResult {
   videoUrl: string;
   blob: Blob;
-  format: string;
+  format: VideoComposerConfig['format'];
+  mimeType: string;
+  fileExtension: 'mp4' | 'webm';
   durationSeconds: number;
   fileSizeMb: number;
 }
@@ -118,12 +120,16 @@ export class VideoComposerService {
       console.warn('AudioContext stream mixing optional fallback:', e);
     }
 
-    const mimeType = getSupportedVideoMimeType();
+    const recorderConfig = getSupportedVideoRecorderConfig();
+    const mimeType = recorderConfig.mimeType;
     const recordedChunks: Blob[] = [];
 
     const recorder = new MediaRecorder(stream, {
       mimeType,
-      videoBitsPerSecond: 6000000, // 6 Mbps cho chất lượng 1080p sắc nét
+      videoBitsPerSecond: 6000000,
+      ...(recorderConfig.audioBitsPerSecond
+        ? { audioBitsPerSecond: recorderConfig.audioBitsPerSecond }
+        : {}),
     });
 
     recorder.ondataavailable = (e) => {
@@ -231,6 +237,8 @@ export class VideoComposerService {
           videoUrl,
           blob: finalBlob,
           format: config.format,
+          mimeType,
+          fileExtension: recorderConfig.fileExtension,
           durationSeconds: Number(totalLessonSeconds.toFixed(1)),
           fileSizeMb: Math.max(0.5, sizeMb),
         });
@@ -294,21 +302,54 @@ async function playAudioTrack(
   }
 }
 
-function getSupportedVideoMimeType(): string {
-  if (typeof MediaRecorder === 'undefined') return 'video/mp4';
-  const types = [
-    'video/mp4;codecs=avc1',
-    'video/mp4',
-    'video/webm;codecs=vp9,opus',
-    'video/webm;codecs=vp8,opus',
-    'video/webm',
-  ];
-  for (const t of types) {
-    if (MediaRecorder.isTypeSupported(t)) {
-      return t;
-    }
+function getSupportedVideoRecorderConfig(): {
+  mimeType: string;
+  fileExtension: 'mp4' | 'webm';
+  audioBitsPerSecond?: number;
+} {
+  if (typeof MediaRecorder === 'undefined') {
+    throw new Error('Trình duyệt hiện tại không hỗ trợ MediaRecorder.');
   }
-  return 'video/webm';
+
+  // MP4 is preferred when the browser exposes it. Otherwise use WebM
+  // instead of falsely labeling a WebM blob as .mp4.
+  const candidates = [
+    {
+      mimeType: 'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
+      fileExtension: 'mp4' as const,
+      audioBitsPerSecond: 128000,
+    },
+    {
+      mimeType: 'video/mp4',
+      fileExtension: 'mp4' as const,
+      audioBitsPerSecond: 128000,
+    },
+    {
+      mimeType: 'video/webm;codecs=vp9,opus',
+      fileExtension: 'webm' as const,
+      audioBitsPerSecond: 128000,
+    },
+    {
+      mimeType: 'video/webm;codecs=vp8,opus',
+      fileExtension: 'webm' as const,
+      audioBitsPerSecond: 128000,
+    },
+    {
+      mimeType: 'video/webm',
+      fileExtension: 'webm' as const,
+      audioBitsPerSecond: 128000,
+    },
+  ];
+
+  const supported = candidates.find(candidate =>
+    MediaRecorder.isTypeSupported(candidate.mimeType)
+  );
+
+  if (!supported) {
+    throw new Error('Không tìm được định dạng video mà trình duyệt hỗ trợ.');
+  }
+
+  return supported;
 }
 
 function playChime(ctx: AudioContext, dest: MediaStreamAudioDestinationNode) {
