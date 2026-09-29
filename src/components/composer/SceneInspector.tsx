@@ -1,3 +1,4 @@
+import { KaraokeTimingEditor } from './KaraokeTimingEditor';
 import React from 'react';
 import { Clock, Download, Edit3, Film, RefreshCw, Settings2, Sparkles, Volume2 } from 'lucide-react';
 import { LessonScene } from '../../types/lesson';
@@ -40,6 +41,7 @@ interface SceneInspectorProps {
   handleRegenerateVisual: () => Promise<void>;
   handleStartExport: () => Promise<void>;
   drawCurrentCanvasFrame: (timeInSec: number) => void;
+  onKaraokeTimingChange: (tokens: KaraokeToken[]) => void;
 }
 
 export const SceneInspector: React.FC<SceneInspectorProps> = ({
@@ -72,6 +74,7 @@ export const SceneInspector: React.FC<SceneInspectorProps> = ({
   handleRegenerateVisual,
   handleStartExport,
   drawCurrentCanvasFrame,
+  onKaraokeTimingChange,
 }) => (
         <div className="lg:col-span-5 bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-5 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
           
@@ -330,39 +333,12 @@ export const SceneInspector: React.FC<SceneInspectorProps> = ({
                 })()}
               </div>
 
-              <div className="mt-3 rounded-xl border border-rose-100 bg-rose-50/40 p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-1.5 text-[11px] font-bold text-rose-800 uppercase tracking-wide">
-                    <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-                    Karaoke phrases
-                  </div>
-                  <span className="text-[10px] font-mono text-rose-500">
-                    {audioEngine.getAudioForScene(currentScene?.sceneId)?.karaokeTokens?.length || 0} phrases
-                  </span>
-                </div>
-                {(() => {
-                  const tokens: KaraokeToken[] = audioEngine.getAudioForScene(currentScene?.sceneId)?.karaokeTokens || [];
-                  return tokens.length ? (
-                    <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
-                      {tokens.map(token => {
-                        const active = previewCurrentTime >= token.start && previewCurrentTime <= token.end;
-                        return (
-                          <span
-                            key={token.index}
-                            className={`px-2 py-1 rounded-md text-[11px] font-semibold border transition-all ${active ? 'bg-rose-600 border-rose-600 text-white scale-105 shadow-sm' : 'bg-white border-rose-100 text-slate-600'}`}
-                            title={`${token.start.toFixed(2)}–${token.end.toFixed(2)}s`}
-                          >
-                            {token.text}
-                          </span>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="text-[10px] text-rose-600/70">
-                      Chưa có phrase timing. Tạo lại Audio để sinh timing Karaoke.
-                    </div>
-                  );
-                })()}
+              <KaraokeTimingEditor
+                tokens={audioEngine.getAudioForScene(currentScene?.sceneId)?.karaokeTokens || []}
+                duration={Math.max(audioEngine.getAudioForScene(currentScene?.sceneId)?.duration || currentScene?.duration || 1, 1)}
+                currentTime={previewCurrentTime}
+                onChange={onKaraokeTimingChange}
+              />
               </div>
 
             </div>
