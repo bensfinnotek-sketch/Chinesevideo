@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Check, GitMerge, Scissors, Trash2 } from 'lucide-react';
+import { Check, GitMerge, Scissors, Trash2, Magnet } from 'lucide-react';
 import { KaraokeToken } from '../../services/audioEngine/types';
 
 interface KaraokeTimingEditorProps {
@@ -7,7 +7,7 @@ interface KaraokeTimingEditorProps {
   duration: number;
   currentTime: number;
   onChange: (tokens: KaraokeToken[]) => void;
-  onPlayPhrase: (startTime: number) => void;
+  onPlayPhrase: (startTime: number, endTime: number) => void;
 }
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
@@ -21,6 +21,7 @@ export const KaraokeTimingEditor: React.FC<KaraokeTimingEditorProps> = ({
 }) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [draftText, setDraftText] = useState('');
+  const [snapEnabled, setSnapEnabled] = useState(true);
 
   const safeTokens = useMemo(
     () => tokens.map((token, index) => ({ ...token, index })).filter(token => token.end > token.start),
@@ -85,6 +86,22 @@ export const KaraokeTimingEditor: React.FC<KaraokeTimingEditorProps> = ({
     setSelectedIndex(Math.max(0, selectedIndex - 1));
   };
 
+  const getSnapPoints = () => [
+    0,
+    ...safeTokens.flatMap(token => [token.start, token.end]),
+    duration,
+  ];
+
+  const snapTime = (value: number, min: number, max: number) => {
+    const clamped = clamp(value, min, max);
+    if (!snapEnabled) return clamped;
+    const threshold = Math.max(0.08, duration * 0.008);
+    const nearest = getSnapPoints()
+      .filter(point => point >= min && point <= max)
+      .sort((a, b) => Math.abs(a - clamped) - Math.abs(b - clamped))[0];
+    return nearest !== undefined && Math.abs(nearest - clamped) <= threshold ? nearest : clamped;
+  };
+
   const beginDrag = (tokenIndex: number, kind: 'start' | 'end') => (event: React.PointerEvent) => {
     event.preventDefault();
     event.stopPropagation();
@@ -105,7 +122,7 @@ export const KaraokeTimingEditor: React.FC<KaraokeTimingEditorProps> = ({
       if (kind === 'start') {
         const min = previous ? previous.end + 0.01 : 0;
         const max = token.end - 0.01;
-        emit(safeTokens.map((item, itemIndex) => itemIndex === tokenIndex ? { ...item, start: clamp(value, min, max) } : item));
+        emit(safeTokens.map((item, itemIndex) => itemIndex === tokenIndex ? { ...item, start: snapTime(value, min, max) } : item));
       } else {
         const min = token.start + 0.01;
         const max = nextToken ? nextToken.start - 0.01 : duration;
@@ -133,7 +150,16 @@ export const KaraokeTimingEditor: React.FC<KaraokeTimingEditorProps> = ({
           <div className="text-[11px] font-bold text-rose-800 uppercase tracking-wide">Karaoke Timing Editor</div>
           <div className="text-[10px] text-rose-600/70">{safeTokens.length} phrase · chỉnh trực tiếp timeline</div>
         </div>
-        <span className="text-[10px] font-mono text-slate-500">{currentTime.toFixed(2)}s</span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setSnapEnabled(value => !value)}
+            className={`rounded-lg border px-2 py-1 text-[9px] font-semibold flex items-center gap-1 ${snapEnabled ? 'border-rose-300 bg-rose-50 text-rose-700' : 'border-slate-200 bg-white text-slate-500'}`}
+            title="Bám theo ranh giới phrase"
+          >
+            <Magnet className="w-3 h-3" /> Snap {snapEnabled ? 'ON' : 'OFF'}
+          </button>
+          <span className="text-[10px] font-mono text-slate-500">{currentTime.toFixed(2)}s</span>
+        </div>
       </div>
 
       <div className="relative h-10 rounded-lg bg-white border border-rose-100 overflow-hidden select-none touch-none">
@@ -145,7 +171,7 @@ export const KaraokeTimingEditor: React.FC<KaraokeTimingEditorProps> = ({
           return (
             <div
               key={token.index}
-              onClick={() => { setSelectedIndex(index); setDraftText(token.text); onPlayPhrase(token.start); }}
+              onClick={() => { setSelectedIndex(index); setDraftText(token.text); onPlayPhrase(token.start, token.end); }}
               className={"absolute top-0 h-full border-r border-white/70 px-1 text-[9px] font-semibold truncate cursor-pointer transition-colors " + (active ? 'bg-rose-500 text-white' : selectedNow ? 'bg-rose-200 text-rose-900' : 'bg-slate-200 text-slate-700')}
               style={{ left: left + '%', width: width + '%' }}
               title={token.text + ' · ' + token.start.toFixed(2) + '–' + token.end.toFixed(2) + 's · click để phát'}
@@ -188,7 +214,7 @@ export const KaraokeTimingEditor: React.FC<KaraokeTimingEditorProps> = ({
             <input value={draftText} onChange={e => setDraftText(e.target.value)} onBlur={() => updateSelected({ text: draftText })} onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); }} className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold text-slate-800" />
           </label>
 
-          <button onClick={() => onPlayPhrase(selected.start)} className="w-full rounded-lg bg-rose-600 text-white px-2 py-1.5 text-[10px] font-bold hover:bg-rose-700 flex items-center justify-center gap-1">
+          <button onClick={() => onPlayPhrase(selected.start, selected.end)} className="w-full rounded-lg bg-rose-600 text-white px-2 py-1.5 text-[10px] font-bold hover:bg-rose-700 flex items-center justify-center gap-1">
             ▶ Phát từ phrase này
           </button>
 
