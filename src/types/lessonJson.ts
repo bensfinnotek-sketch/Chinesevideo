@@ -127,3 +127,66 @@ export function normalizeSceneId(id: string, index: number): string {
   const normalized = id.trim().replace(/[^a-zA-Z0-9_-]+/g, '_');
   return normalized || `scene_${String(index + 1).padStart(3, '0')}`;
 }
+
+import type { GeneratedLessonPlan, LessonScene } from './lesson';
+
+/**
+ * Convert the existing AI lesson plan into the canonical Lesson JSON.
+ * This keeps the current generator backward-compatible while making the
+ * canonical JSON the hand-off contract for TTS/visual/rendering layers.
+ */
+export function lessonPlanToLessonJson(plan: GeneratedLessonPlan): LessonJsonDocument {
+  return {
+    lesson: {
+      title: plan.title,
+      topic: plan.topic,
+      level: plan.targetVocabItems[0]?.level || '',
+      targetLanguage: 'zh-CN',
+      explanationLanguage: 'vi',
+    },
+    scenes: plan.scenes.map((scene, index) => lessonSceneToLessonJson(scene, index)),
+  };
+}
+
+export function lessonSceneToLessonJson(
+  scene: LessonScene,
+  index = 0
+): LessonJsonScene {
+  return {
+    id: normalizeSceneId(String(scene.sceneId), index),
+    type: toCanonicalSceneType(scene.type),
+    duration: scene.duration,
+    chinese: scene.chineseText,
+    pinyin: scene.pinyin,
+    vietnamese: scene.vietnamese,
+    teacherExplanation: scene.teacherExplanation,
+    highlightWords: scene.highlightWords || [],
+    visualPrompt: scene.visualPrompt,
+    audio: {
+      language: 'zh-CN',
+      voice: scene.voice,
+      speed: 1,
+    },
+  };
+}
+
+function toCanonicalSceneType(
+  type: LessonScene['type']
+): LessonJsonSceneType {
+  switch (type) {
+    case 'intro':
+      return 'intro';
+    case 'context':
+    case 'dialogue':
+    case 'listen':
+    case 'explanation':
+    case 'vocabulary':
+    case 'example':
+    case 'repeat':
+    case 'mini_practice':
+      return type;
+    default:
+      // Legacy scene types remain renderable without breaking old lessons.
+      return 'explanation';
+  }
+}
