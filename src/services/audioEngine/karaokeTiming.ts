@@ -7,6 +7,33 @@ function normalize(value: string): string {
   return value.replace(PUNCTUATION, '').trim();
 }
 
+function splitPinyinSyllables(pinyin: string): string[] {
+  return pinyin.trim().split(/\\s+/).filter(Boolean);
+}
+
+function attachPinyinToUnits(units: string[], pinyin: string): string[] {
+  const syllables = splitPinyinSyllables(pinyin);
+  if (!syllables.length || !units.length) return units.map(() => '');
+
+  const weights = units.map(unit => Math.max(1, normalize(unit).length));
+  const total = weights.reduce((sum, weight) => sum + weight, 0);
+  const result: string[] = [];
+  let cursor = 0;
+
+  units.forEach((_, index) => {
+    const remainingUnits = units.length - index;
+    const remainingSyllables = syllables.length - cursor;
+    const target = index === units.length - 1
+      ? remainingSyllables
+      : Math.max(1, Math.round((weights[index] / Math.max(1, total)) * syllables.length));
+    const take = Math.min(remainingSyllables - Math.max(0, remainingUnits - 1), Math.max(1, target));
+    result.push(syllables.slice(cursor, cursor + take).join(' '));
+    cursor += take;
+  });
+
+  return result;
+}
+
 function splitSmartClauses(text: string): string[] {
   return text
     .split(/[，、；：,.!?！？。]+/)
@@ -65,7 +92,7 @@ export function buildKaraokeTokens(
   segments.forEach((segment, segmentIndex) => {
     if (segment.type !== 'chinese_dialogue' || segment.end <= segment.start) return;
 
-    const units = splitSmartClauses(segment.text).flatMap(clause => buildPhraseUnits(clause, preferredPhrases));
+    const clauses = splitSmartClauses(segment.text);\n    const units = clauses.flatMap(clause => buildPhraseUnits(clause, preferredPhrases));\n    const pinyinUnits = attachPinyinToUnits(units, segment.pinyin || '');
     if (!units.length) return;
 
     const weights = units.map(unit => Math.max(1, normalize(unit).length));
