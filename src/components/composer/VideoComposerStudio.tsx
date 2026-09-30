@@ -381,7 +381,6 @@ export const VideoComposerStudio: React.FC<VideoComposerStudioProps> = ({
           <button onClick={() => setInspectorTab('export')} className="px-3 py-2 rounded-xl text-xs font-semibold border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 flex items-center gap-1.5"><Settings2 className="w-3.5 h-3.5" /> Cài đặt</button>
           <button onClick={handleStartExport} className="px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white flex items-center gap-2"><Download className="w-3.5 h-3.5" /> Xuất video</button>
         </div></div>
-      </div>
 
       {/* 2. Timeline Navigation of 8 Scenes */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 select-none">
