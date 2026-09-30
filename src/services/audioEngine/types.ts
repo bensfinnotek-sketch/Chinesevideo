@@ -64,6 +64,7 @@ export interface AudioMetadata {
   speedMode: TTSSpeedMode;
   segments: AudioSegment[];
   karaokeTokens?: KaraokeToken[];
+  learningPhrases?: LearningPhrase[];
   createdAt?: number;
   provider?: string;
   sceneType?: string;
