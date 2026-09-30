@@ -18,10 +18,16 @@ export type TTSSpeedMode = 'normal' | 'slow' | 'very_slow';
 
 export type TTSProviderId = 'gemini_tts' | 'web_speech';
 
+export type LearningPhraseRole = 'target' | 'supporting' | 'connector';
+
 export interface KaraokeToken {
   text: string;
   pinyin?: string;
   pinyinSyllables?: string[];
+  /** Stable semantic role shared by video, replay and practice layers. */
+  learningRole?: LearningPhraseRole;
+  /** Stable key for grouping/replaying the same learning unit. */
+  learningUnitId?: string;
   start: number;
   end: number;
   index: number;
