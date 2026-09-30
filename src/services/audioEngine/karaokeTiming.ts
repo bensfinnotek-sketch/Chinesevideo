@@ -43,7 +43,7 @@ function getLearningRole(unit: string, preferredPhrases: string[]): LearningPhra
 }
 
 function makeLearningUnitId(unit: string, index: number): string {
-  return `phrase_${index}_${normalize(unit).slice(0, 24)}`;
+  return `phrase_${normalize(unit).slice(0, 40)}`;
 }
 
 function splitSmartClauses(text: string): string[] {
