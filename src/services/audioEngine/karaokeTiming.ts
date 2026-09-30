@@ -1,4 +1,4 @@
-import { AudioSegment, KaraokeToken } from './types';
+import { AudioSegment, KaraokeToken, LearningPhraseRole } from './types';
 
 const PUNCTUATION = /[，。！？、；：,.!?;:\s]+/g;
 const CJK = /[\u3400-\u9fff\u3040-\u30ff]/;
@@ -32,6 +32,18 @@ function attachPinyinToUnits(units: string[], pinyin: string): string[] {
   });
 
   return result;
+}
+
+
+function getLearningRole(unit: string, preferredPhrases: string[]): LearningPhraseRole {
+  const normalizedUnit = normalize(unit);
+  if (preferredPhrases.some(phrase => normalize(phrase) === normalizedUnit)) return 'target';
+  if (normalizedUnit.length <= 1) return 'connector';
+  return 'supporting';
+}
+
+function makeLearningUnitId(unit: string, index: number): string {
+  return `phrase_${index}_${normalize(unit).slice(0, 24)}`;
 }
 
 function splitSmartClauses(text: string): string[] {
@@ -109,6 +121,8 @@ export function buildKaraokeTokens(
         text: unit,
         pinyin: pinyinUnits[index] || '',
         pinyinSyllables: splitPinyinSyllables(pinyinUnits[index] || ''),
+        learningRole: getLearningRole(unit, preferredPhrases),
+        learningUnitId: makeLearningUnitId(unit, globalIndex),
         start: cursor,
         end,
         index: globalIndex++,
@@ -158,6 +172,8 @@ export function sceneKaraokeTimingToTokens(
         text,
         pinyin: matched?.pinyin || '',
         pinyinSyllables: matched?.pinyinSyllables || splitPinyinSyllables(matched?.pinyin || ''),
+        learningRole: matched?.learningRole,
+        learningUnitId: matched?.learningUnitId,
         start,
         end,
         index,
