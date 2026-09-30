@@ -345,7 +345,6 @@ export const SceneInspector: React.FC<SceneInspectorProps> = ({
                 onPlayPhrase={onPlayKaraokePhrase}
                 onAutoGenerate={onAutoGenerateKaraoke}
               />
-              </div>
 
             </div>
           )}
