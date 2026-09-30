@@ -34,6 +34,17 @@ export interface KaraokeToken {
   sourceSegmentIndex: number;
 }
 
+export interface LearningPhrase {
+  id: string;
+  text: string;
+  pinyin: string;
+  start: number;
+  end: number;
+  role: LearningPhraseRole;
+  sourceSegmentIndex: number;
+  sourceTokenIndex: number;
+}
+
 export interface AudioSegment {
   text: string;
   start: number; // thời điểm bắt đầu (giây)
