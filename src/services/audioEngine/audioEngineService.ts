@@ -12,7 +12,7 @@ import { GeminiTTSProvider } from './providers/geminiTTSProvider';
 import { WebSpeechTTSProvider } from './providers/webSpeechTTSProvider';
 import { DEFAULT_AUDIO_ENGINE_SETTINGS } from './voicePresets';
 import { speakChinese, stopSpeaking } from '../audioSynthesis';
-import { buildKaraokeTokens, sceneKaraokeTimingToTokens } from './karaokeTiming';
+import { buildKaraokeTokens, sceneKaraokeTimingToTokens, karaokeTokensToLearningPhrases } from './karaokeTiming';
 
 export class AudioEngineService {
   private static instance: AudioEngineService;
@@ -95,6 +95,7 @@ export class AudioEngineService {
       .map((token, index) => ({ ...token, index }));
 
     metadata.karaokeTokens = normalized;
+    metadata.learningPhrases = karaokeTokensToLearningPhrases(normalized);
     this.sceneAudios.set(String(sceneId), metadata);
   }
 
@@ -123,6 +124,7 @@ export class AudioEngineService {
     metadata.karaokeTokens = manualKaraokeTokens.length
       ? manualKaraokeTokens
       : buildKaraokeTokens(metadata.segments, scene.highlightWords || []);
+    metadata.learningPhrases = karaokeTokensToLearningPhrases(metadata.karaokeTokens);
     this.sceneAudios.set(String(scene.sceneId), metadata);
     return metadata;
   }
