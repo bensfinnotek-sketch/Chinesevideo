@@ -34,7 +34,6 @@ function attachPinyinToUnits(units: string[], pinyin: string): string[] {
   return result;
 }
 
-
 function getLearningRole(unit: string, preferredPhrases: string[]): LearningPhraseRole {
   const normalizedUnit = normalize(unit);
   if (preferredPhrases.some(phrase => normalize(phrase) === normalizedUnit)) return 'target';
@@ -42,7 +41,7 @@ function getLearningRole(unit: string, preferredPhrases: string[]): LearningPhra
   return 'supporting';
 }
 
-function makeLearningUnitId(unit: string, index: number): string {
+function makeLearningUnitId(unit: string): string {
   return `phrase_${normalize(unit).slice(0, 40)}`;
 }
 
@@ -122,7 +121,7 @@ export function buildKaraokeTokens(
         pinyin: pinyinUnits[index] || '',
         pinyinSyllables: splitPinyinSyllables(pinyinUnits[index] || ''),
         learningRole: getLearningRole(unit, preferredPhrases),
-        learningUnitId: makeLearningUnitId(unit, globalIndex),
+        learningUnitId: makeLearningUnitId(unit),
         start: cursor,
         end,
         index: globalIndex++,
